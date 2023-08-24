@@ -1,0 +1,19 @@
+[package]
+name = "fsd_interface"
+version = "0.1.17"
+edition = "2021"
+authors = ["Caspian Merlin <chpmerlin@gmail.com>"]
+description = "A Rust crate for serialising and deserialising FSD (Flight Simulator Daeomon) protocol network messages"
+readme = "README.md"
+repository = "https://github.com/caspianmerlin/fsd_interface"
+homepage = "https://github.com/caspianmerlin/fsd_interface"
+license = "BSD-3-Clause"
+keywords = ["flightsim", "fsd", "vatsim", "flight_simulation"]
+categories = ["parsing", "network-programming"]
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+thiserror = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1" }
