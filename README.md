@@ -67,18 +67,12 @@ if let FsdMessage::ClientQueryMessage(client_query_message) = message_deserialis
 
 
 ## Disclaimer
-
+ 
 It is against the VATSIM [Code of Conduct](https://vatsim.net/docs/policy/code-of-conduct) and
 [User Agreement](https://cdn.vatsim.net/policy-documents/User_Agreement_v1.2.pdf) to attempt to connect to a VATSIM server
 with client software that has not been approved for use.
-
-I do **not** condone the use of this crate to attempt to connect to a VATSIM server with an unauthorised client. At any rate, the VATSIM servers carry
-out authentication checks the mechanism of which I have not documented (and will not), so it wouldn't work anyway. By all means use this crate to
-analyse FSD messages sent from and received to your computer in a legitimate VATSIM / IVAO / private FSD connection and see what they contain -
-the only sensitive data in there is your plain text password (on some clients)!
-
+ 
 Of course, you're also well within your rights to use this crate to write a client that connects to a private FSD server.
-
-If you _do_ obtain permission from VATSIM to connect with your own client software and decide to use this crate, be my guest! Do bear in mind, 
-however, that this crate has been made mainly by reverse engineering and making assumptions based on network packets and experimentation. It is your responsibility
-to double check that it is indeed compliant with the VATSIM FSD protocol.
+ 
+If you _do_ obtain permission from VATSIM to connect with your own client software and decide to use this crate, you are 
+responsible for check that it is indeed compliant with the VATSIM FSD protocol.
