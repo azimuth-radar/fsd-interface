@@ -72,7 +72,7 @@ It is against the VATSIM [Code of Conduct](https://vatsim.net/docs/policy/code-o
 [User Agreement](https://cdn.vatsim.net/policy-documents/User_Agreement_v1.2.pdf) to attempt to connect to a VATSIM server
 with client software that has not been approved for use.
  
-Of course, you're also well within your rights to use this crate to write a client that connects to a private FSD server.
+Of course, you're well within your rights to use this crate to write a client that connects to a private FSD server.
  
 If you _do_ obtain permission from VATSIM to connect with your own client software and decide to use this crate, you are 
-responsible for check that it is indeed compliant with the VATSIM FSD protocol.
+responsible for checking that it is indeed compliant with the VATSIM FSD protocol.
