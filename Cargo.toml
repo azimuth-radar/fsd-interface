@@ -1,6 +1,6 @@
 [package]
 name = "fsd_interface"
-version = "0.1.17"
+version = "0.1.18"
 edition = "2021"
 authors = ["Caspian Merlin <chpmerlin@gmail.com>"]
 description = "A Rust crate for serialising and deserialising FSD (Flight Simulator Daeomon) protocol network messages"

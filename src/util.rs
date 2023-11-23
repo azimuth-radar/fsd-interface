@@ -106,6 +106,8 @@ pub(crate) fn parse_altitude(input: &str) -> Result<u32, FsdMessageParseError> {
     }
 }
 
+
+// $CQEGCC_ATIS:@94835:NEWATIS:ATIS B:  31016KT Q1022
 pub(crate) fn parse_new_atis(
     input: &[&str],
 ) -> Result<(char, String, String), FsdMessageParseError> {
@@ -120,7 +122,7 @@ pub(crate) fn parse_new_atis(
             "{first}:{last}"
         )));
     }
-    let split = last.split_whitespace().collect::<Vec<&str>>();
+    let split = last.split(&[' ', '-']) .collect::<Vec<&str>>();
     let wind = if split[0].len() < 7 {
         return Err(FsdMessageParseError::InvalidNewAtisMessage(format!(
             "{first}:{last}"
@@ -128,12 +130,12 @@ pub(crate) fn parse_new_atis(
     } else {
         split[0].to_string()
     };
-    let pressure = if split[2].len() < 4 {
+    let pressure = if split[1].len() < 4 {
         return Err(FsdMessageParseError::InvalidNewAtisMessage(format!(
             "{first}:{last}"
         )));
     } else {
-        split[2].to_string()
+        split[1].to_string()
     };
     Ok((atis_letter, wind, pressure))
 }
