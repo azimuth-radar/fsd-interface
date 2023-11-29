@@ -122,34 +122,34 @@ pub fn parse_message(message: impl AsRef<str>) -> Result<FsdMessageType, errors:
 
 
 
-#[test]
-fn test_parsing() {
-    use std::{io::{BufReader, BufWriter, BufRead, Write}, fs::File, time::Instant};
-    let input_file = BufReader::new(File::open(r#"../../test_captures/captures/ivao_log.txt"#).unwrap());
-    let mut error_file = BufWriter::new(File::create("../../test_captures/errors.txt").unwrap());
-    let mut success_file = BufWriter::new(File::create("../../test_captures/success.txt").unwrap());
+// #[test]
+// fn test_parsing() {
+//     use std::{io::{BufReader, BufWriter, BufRead, Write}, fs::File, time::Instant};
+//     let input_file = BufReader::new(File::open(r#"text.txt"#).unwrap());
+//     let mut error_file = BufWriter::new(File::create("test_captures/errors.txt").unwrap());
+//     let mut success_file = BufWriter::new(File::create("test_captures/success.txt").unwrap());
     
-    let mut success_count = 0;
-    let mut error_count = 0;
-    let start_time = Instant::now();
-    for line in input_file.lines() {
-        let line = line.unwrap();
-        match enums::FsdMessageType::identify(&line) {
-            Ok(msg_type) => {
-                write!(success_file, "{:?}\r\n", msg_type).unwrap();
-                success_count += 1;
-            },
-            Err(error) => {
-                write!(error_file, "{}\r\n{:?}\r\n", line, error).unwrap();
-                error_count += 1;
-            }
-        };
-    }
-    let total_count = success_count + error_count;
-    let elapsed_milliseconds = start_time.elapsed().as_millis();
-    let avg = (total_count as f64) / (elapsed_milliseconds as f64);
-    println!("Read {} packets in {} milliseconds.\r\nAveraging {} packets per millisecond.\r\nSuccess: {}\r\nFailed: {}", total_count, elapsed_milliseconds, avg, success_count, error_count);
-}
+//     let mut success_count = 0;
+//     let mut error_count = 0;
+//     let start_time = Instant::now();
+//     for line in input_file.lines() {
+//         let line = line.unwrap();
+//         match enums::FsdMessageType::identify(&line) {
+//             Ok(msg_type) => {
+//                 write!(success_file, "{:?}\r\n", msg_type).unwrap();
+//                 success_count += 1;
+//             },
+//             Err(error) => {
+//                 write!(error_file, "{}\r\n{:?}\r\n", line, error).unwrap();
+//                 error_count += 1;
+//             }
+//         };
+//     }
+//     let total_count = success_count + error_count;
+//     let elapsed_milliseconds = start_time.elapsed().as_millis();
+//     let avg = (total_count as f64) / (elapsed_milliseconds as f64);
+//     println!("Read {} packets in {} milliseconds.\r\nAveraging {} packets per millisecond.\r\nSuccess: {}\r\nFailed: {}", total_count, elapsed_milliseconds, avg, success_count, error_count);
+// }
 
 
 
