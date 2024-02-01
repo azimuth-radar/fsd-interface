@@ -1326,7 +1326,7 @@ pub struct MetarResponseMessage {
 
 impl Display for MetarResponseMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "$AX{}:{}:METAR:{}", self.from, self.to, self.metar)
+        write!(f, "$AR{}:{}:METAR:{}", self.from, self.to, self.metar)
     }
 }
 
@@ -1341,11 +1341,11 @@ impl TryFrom<&[&str]> for MetarResponseMessage {
 }
 
 impl MetarResponseMessage {
-    pub fn new(from: impl AsRef<str>, to: impl AsRef<str>, station: impl AsRef<str>) -> Self {
+    pub fn new(from: impl AsRef<str>, to: impl AsRef<str>, metar: impl AsRef<str>) -> Self {
         MetarResponseMessage {
             from: from.as_ref().to_uppercase(),
             to: to.as_ref().to_uppercase(),
-            metar: station.as_ref().to_uppercase(),
+            metar: metar.as_ref().to_uppercase(),
         }
     }
 }
