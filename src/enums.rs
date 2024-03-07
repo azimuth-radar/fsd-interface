@@ -624,6 +624,7 @@ pub enum SharedStateType {
     IHave(String),
     ScratchPad(String, String),
     TempAltitude(String, u32),
+    FinalAltitude(String, u32),
     VoiceType(String, VoiceCapability),
     BeaconCode(String, TransponderCode),
     HandoffCancel(String),
@@ -641,6 +642,9 @@ impl Display for SharedStateType {
             }
             SharedStateType::TempAltitude(subject, altitude) => {
                 write!(f, "TA:{}:{}", subject, altitude)
+            }
+            SharedStateType::FinalAltitude(subject, altitude) => {
+                write!(f, "FA:{}:{}", subject, altitude)
             }
             SharedStateType::VoiceType(subject, voice_type) => {
                 write!(f, "VT:{}:{}", subject, voice_type)

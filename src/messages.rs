@@ -2311,6 +2311,11 @@ impl TryFrom<&[&str]> for SharedStateMessage {
                 let altitude = util::parse_altitude(fields[5])?;
                 SharedStateType::TempAltitude(fields[4].to_uppercase(), altitude)
             }
+            "FA" => {
+                check_min_num_fields!(fields, 6);
+                let altitude = util::parse_altitude(fields[5])?;
+                SharedStateType::FinalAltitude(fields[4].to_uppercase(), altitude)
+            }
             "VT" => {
                 check_min_num_fields!(fields, 6);
                 let voice_capability: VoiceCapability = fields[5].parse()?;
