@@ -57,8 +57,9 @@ impl RadioFrequency {
     /// assert_eq!(RadioFrequency(118, 300), freq);
     /// ```
     pub fn new(left: u16, right: u16) -> Result<RadioFrequency, FsdMessageParseError> {
-        if (left < 118 || left > 137)
-            && !((left == 199 && right == 998) || (left == 149 && right == 999))
+        if !((118..=137).contains(&left)
+            || left == 199 && right == 998
+            || left == 149 && right == 999)
         {
             return Err(FsdMessageParseError::InvalidFrequency(format!(
                 "{}.{:03}",

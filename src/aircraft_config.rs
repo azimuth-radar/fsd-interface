@@ -45,7 +45,7 @@ impl Display for AircraftConfig {
         let serialised = json!({
             "config": self,
         });
-        write!(f, "{}", serialised.to_string())
+        write!(f, "{serialised}")
     }
 }
 #[derive(Default, Debug, Serialize, Deserialize, Clone, Copy)]

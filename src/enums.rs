@@ -334,113 +334,147 @@ impl FsdMessageType {
 
         if fields[0].starts_with("#AA") {
             return Ok(Self::AtcRegisterMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("#AP") {
+        }
+        if fields[0].starts_with("#AP") {
             return Ok(Self::PilotRegisterMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("#DA") {
+        }
+        if fields[0].starts_with("#DA") {
             return Ok(Self::AtcDeregisterMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("#DP") {
+        }
+        if fields[0].starts_with("#DP") {
             return Ok(Self::PilotDeregisterMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with('%') {
+        }
+        if fields[0].starts_with('%') {
             return Ok(Self::AtcPositionUpdateMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with('\'') {
+        }
+        if fields[0].starts_with('\'') {
             return Ok(Self::AtcSecondaryVisCentreMessage(
-                fields.as_slice().try_into()?,  
+                fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with('@') {
+        }
+        if fields[0].starts_with('@') {
             return Ok(Self::PilotPositionUpdateMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$ZC") {
+        }
+        if fields[0].starts_with("$ZC") {
             return Ok(Self::AuthenticationChallengeMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$ZR") {
+        }
+        if fields[0].starts_with("$ZR") {
             return Ok(Self::AuthenticationResponseMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$ER") {
+        }
+        if fields[0].starts_with("$ER") {
             return Ok(Self::FsdErrorMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$HO") {
+        }
+        if fields[0].starts_with("$HO") {
             return Ok(Self::HandoffOfferMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$HA") {
+        }
+        if fields[0].starts_with("$HA") {
             return Ok(Self::HandoffAcceptMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("#TM") {
+        }
+        if fields[0].starts_with("#TM") {
             if fields[1].starts_with('@') {
                 return Ok(Self::FrequencyMessage(fields.as_slice().try_into()?));
-            } else {
-                return Ok(Self::TextMessage(fields.as_slice().try_into()?));
             }
-        } else if fields[0].starts_with("$XX") {
+
+            return Ok(Self::TextMessage(fields.as_slice().try_into()?));
+        }
+        if fields[0].starts_with("$XX") {
             return Ok(Self::ChangeServerMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$FP") {
+        }
+        if fields[0].starts_with("$FP") {
             return Ok(Self::FlightPlanMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$AM") {
+        }
+        if fields[0].starts_with("$AM") {
             return Ok(Self::FlightPlanAmendmentMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$DI") {
+        }
+        if fields[0].starts_with("$DI") {
             return Ok(Self::InitialServerHandshakeMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$ID") {
+        }
+        if fields[0].starts_with("$ID") {
             return Ok(Self::InitialClientHandshakeMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$SF") {
+        }
+        if fields[0].starts_with("$SF") {
             return Ok(Self::SendFastPositionUpdatesMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("#ST") {
+        }
+        if fields[0].starts_with("#ST") {
             return Ok(Self::VelocityPositionStoppedMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("#DL") {
+        }
+        if fields[0].starts_with("#DL") {
             return Ok(Self::ServerHeartbeat);
-        } else if fields[0].starts_with("#SL") {
+        }
+        if fields[0].starts_with("#SL") {
             return Ok(Self::VelocityPositionSlowMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("#PC") {
+        }
+        if fields[0].starts_with("#PC") {
             return Ok(Self::SharedStateMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with('^') {
+        }
+        if fields[0].starts_with('^') {
             return Ok(Self::VelocityPositionFastMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$!!") {
+        }
+        if fields[0].starts_with("$!!") {
             return Ok(Self::KillMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$AX") {
+        }
+        if fields[0].starts_with("$AX") {
             return Ok(Self::MetarRequestMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$AR") {
+        }
+        if fields[0].starts_with("$AR") {
             return Ok(Self::MetarResponseMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$CQ") {
+        }
+        if fields[0].starts_with("$CQ") {
             return Ok(Self::ClientQueryMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$CR") {
+        }
+        if fields[0].starts_with("$CR") {
             return Ok(Self::ClientQueryResponseMessage(
                 fields.as_slice().try_into()?,
             ));
-        } else if fields[0].starts_with("$PI") {
+        }
+        if fields[0].starts_with("$PI") {
             return Ok(Self::PingMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("$PO") {
+        }
+        if fields[0].starts_with("$PO") {
             return Ok(Self::PongMessage(fields.as_slice().try_into()?));
-        } else if fields[0].starts_with("#SB") {
+        }
+        if fields[0].starts_with("#SB") {
             if fields[2] == "PIR" {
                 return Ok(Self::PlaneInfoRequestMessage(fields.as_slice().try_into()?));
-            } else if fields[2] == "PI" {
+            }
+            if fields[2] == "PI" {
                 return Ok(Self::PlaneInfoResponseMessage(
                     fields.as_slice().try_into()?,
                 ));
-            } else if fields[2] == "FSIPI" {
+            }
+            if fields[2] == "FSIPI" {
                 return Ok(Self::FSInnPlaneInformationResponseMessage);
-            } else if fields[2] == "FSIPIR" {
+            }
+            if fields[2] == "FSIPIR" {
                 return Ok(Self::FSInnPlaneInformationRequestMessage);
             }
         }
 
-        return Err(FsdMessageParseError::UnknownMessageType(
+        Err(FsdMessageParseError::UnknownMessageType(
             message.to_string(),
-        ));
+        ))
     }
 }
 
