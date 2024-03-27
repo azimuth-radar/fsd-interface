@@ -1,8 +1,4 @@
-use crate::{
-    enums::ClientCapability,
-    errors::FsdMessageParseError,
-    structs::RadioFrequency,
-};
+use crate::{enums::ClientCapability, errors::FsdMessageParseError, structs::RadioFrequency};
 use std::str::FromStr;
 
 pub fn encode_pitch_bank_heading(pitch: f64, bank: f64, heading: f64, on_ground: bool) -> u32 {
@@ -64,7 +60,7 @@ pub fn split_frequencies(input: &str) -> Vec<RadioFrequency> {
         .collect()
 }
 
-pub(crate) fn group_frequencies_without_symbol(frequencies: &Vec<RadioFrequency>) -> String {
+pub(crate) fn group_frequencies_without_symbol(frequencies: &[RadioFrequency]) -> String {
     let mut freqs_string = String::with_capacity(6 * frequencies.len() - 1);
     let mut freqs = frequencies.iter().peekable();
     while let Some(freq) = freqs.next() {
@@ -76,7 +72,7 @@ pub(crate) fn group_frequencies_without_symbol(frequencies: &Vec<RadioFrequency>
     freqs_string
 }
 
-pub(crate) fn group_frequencies_with_symbol(frequencies: &Vec<RadioFrequency>) -> String {
+pub(crate) fn group_frequencies_with_symbol(frequencies: &[RadioFrequency]) -> String {
     let mut freqs_string = String::with_capacity(6 * frequencies.len() - 1);
     let mut freqs = frequencies.iter().peekable();
     while let Some(freq) = freqs.next() {
@@ -91,7 +87,7 @@ pub(crate) fn group_frequencies_with_symbol(frequencies: &Vec<RadioFrequency>) -
 
 pub(crate) fn parse_altitude(input: &str) -> Result<u32, FsdMessageParseError> {
     if input.is_empty() {
-        return Ok(0);
+        Ok(0)
     } else {
         let flight_level = input.to_uppercase().starts_with("FL");
         let input_trimmed = if flight_level { &input[2..] } else { input };
@@ -105,7 +101,6 @@ pub(crate) fn parse_altitude(input: &str) -> Result<u32, FsdMessageParseError> {
         Ok(as_num)
     }
 }
-
 
 // $CQEGCC_ATIS:@94835:NEWATIS:ATIS B:  31016KT Q1022
 pub(crate) fn parse_new_atis(
@@ -122,21 +117,22 @@ pub(crate) fn parse_new_atis(
             "{first}:{last}"
         )));
     }
-    let split = last.split(&[' ', '-']) .collect::<Vec<&str>>();
-    let wind = if split[0].len() < 7 {
+    let split = last.split(&[' ', '-']).collect::<Vec<&str>>();
+
+    if split[0].len() < 7 {
         return Err(FsdMessageParseError::InvalidNewAtisMessage(format!(
             "{first}:{last}"
         )));
-    } else {
-        split[0].to_string()
     };
-    let pressure = if split[1].len() < 4 {
+    let wind = split[0].to_string();
+
+    if split[1].len() < 4 {
         return Err(FsdMessageParseError::InvalidNewAtisMessage(format!(
             "{first}:{last}"
         )));
-    } else {
-        split[1].to_string()
     };
+    let pressure = split[1].to_string();
+
     Ok((atis_letter, wind, pressure))
 }
 
@@ -147,7 +143,7 @@ pub(crate) fn assemble_with_colons(slice: &[&str]) -> String {
     let mut buffer = String::new();
     let mut iter = slice.iter().peekable();
     while let Some(chunk) = iter.next() {
-        buffer.push_str(&chunk);
+        buffer.push_str(chunk);
         if iter.peek().is_some() {
             buffer.push(':');
         }

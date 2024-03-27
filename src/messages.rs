@@ -16,9 +16,9 @@ use crate::{
     util,
 };
 
-pub const SERVER_CALLSIGN: &'static str = "SERVER";
+pub const SERVER_CALLSIGN: &str = "SERVER";
 pub const ATC_TEXT_CHANNEL_FREQUENCY: RadioFrequency = RadioFrequency(149, 999);
-pub const AIRCRAFT_HANDLER_RECIPIENT: &'static str = "@94835";
+pub const AIRCRAFT_HANDLER_RECIPIENT: &str = "@94835";
 
 macro_rules! check_min_num_fields {
     ($fields: ident, $i: literal) => {
@@ -60,7 +60,8 @@ impl Display for AtcRegisterMessage {
             self.cid,
             self.password,
             self.rating as u8,
-            self.protocol as u8)
+            self.protocol as u8
+        )
     }
 }
 
@@ -140,7 +141,7 @@ impl TryFrom<&[&str]> for PilotRegisterMessage {
         Ok(PilotRegisterMessage::new(
             first,
             fields[1],
-            *fields.get(7).unwrap_or_else(|| &""),
+            *fields.get(7).unwrap_or(&""),
             fields[2],
             fields[3],
             fields[4].parse()?,
@@ -327,10 +328,7 @@ impl Display for AtcSecondaryVisCentreMessage {
         write!(
             f,
             "'{}:{}:{:.5}:{:.5}",
-            self.callsign,
-            self.index,
-            self.latitude,
-            self.longitude
+            self.callsign, self.index, self.latitude, self.longitude
         )
     }
 }
@@ -342,11 +340,13 @@ impl TryFrom<&[&str]> for AtcSecondaryVisCentreMessage {
         let first = &fields[0][1..];
         Ok(AtcSecondaryVisCentreMessage::new(
             first,
-            fields[1].parse().map_err(|_| FsdMessageParseError::InvalidIndex(fields[1].to_string()))?,
+            fields[1]
+                .parse()
+                .map_err(|_| FsdMessageParseError::InvalidIndex(fields[1].to_string()))?,
             fields[2]
                 .parse()
                 .map_err(|_| FsdMessageParseError::InvalidCoordinate(fields[5].to_string()))?,
-                fields[3]
+            fields[3]
                 .parse()
                 .map_err(|_| FsdMessageParseError::InvalidCoordinate(fields[5].to_string()))?,
         ))
@@ -354,12 +354,7 @@ impl TryFrom<&[&str]> for AtcSecondaryVisCentreMessage {
 }
 
 impl AtcSecondaryVisCentreMessage {
-    pub fn new(
-        callsign: impl AsRef<str>,
-        index: usize,
-        latitude: f64,
-        longitude: f64,
-    ) -> Self {
+    pub fn new(callsign: impl AsRef<str>, index: usize, latitude: f64, longitude: f64) -> Self {
         AtcSecondaryVisCentreMessage {
             callsign: callsign.as_ref().to_uppercase(),
             index,
@@ -470,7 +465,7 @@ impl PilotPositionUpdateMessage {
     ) -> Self {
         PilotPositionUpdateMessage {
             callsign: callsign.as_ref().to_uppercase(),
-            transponder_mode: transponder_mode,
+            transponder_mode,
             transponder_code,
             rating,
             latitude,
@@ -576,7 +571,7 @@ impl TryFrom<&[&str]> for TextMessage {
         if fields.len() > 3 {
             for m in &fields[3..] {
                 message.push(':');
-                message.push_str(*m);
+                message.push_str(m);
             }
         }
         Ok(TextMessage::new(first, fields[1], message))
@@ -616,7 +611,7 @@ impl TryFrom<&[&str]> for FrequencyMessage {
         if fields.len() > 3 {
             for m in &fields[3..] {
                 message.push(':');
-                message.push_str(*m);
+                message.push_str(m);
             }
         }
         Ok(FrequencyMessage::new(
@@ -748,7 +743,7 @@ impl Display for InitialClientHandshakeMessage {
         );
         if let Some(initial_key) = &self.initial_key {
             message.push(':');
-            message.push_str(&initial_key);
+            message.push_str(initial_key);
         }
         write!(f, "{message}")
     }
@@ -774,7 +769,7 @@ impl TryFrom<&[&str]> for InitialClientHandshakeMessage {
                 .map_err(|_| FsdMessageParseError::InvalidVersionNumber(fields[5].to_string()))?,
             fields[6],
             fields[7],
-            fields.get(8).map(|x| *x),
+            fields.get(8).copied(),
         ))
     }
 }
@@ -1108,7 +1103,24 @@ pub struct VelocityPositionFastMessage {
 
 impl From<VelocityPositionSlowMessage> for VelocityPositionFastMessage {
     fn from(value: VelocityPositionSlowMessage) -> Self {
-        VelocityPositionFastMessage { from: value.from, latitude: value.latitude, longitude: value.longitude, true_altitude: value.true_altitude, altitude_agl: value.altitude_agl, pitch: value.pitch, bank: value.bank, heading: value.heading, on_ground: value.on_ground, x_velocity: value.x_velocity, y_velocity: value.y_velocity, z_velocity: value.z_velocity, pitch_rad_per_sec: value.pitch_rad_per_sec, heading_rad_per_sec: value.heading_rad_per_sec, bank_rad_per_sec: value.bank_rad_per_sec, nose_gear_angle: value.nose_gear_angle }
+        VelocityPositionFastMessage {
+            from: value.from,
+            latitude: value.latitude,
+            longitude: value.longitude,
+            true_altitude: value.true_altitude,
+            altitude_agl: value.altitude_agl,
+            pitch: value.pitch,
+            bank: value.bank,
+            heading: value.heading,
+            on_ground: value.on_ground,
+            x_velocity: value.x_velocity,
+            y_velocity: value.y_velocity,
+            z_velocity: value.z_velocity,
+            pitch_rad_per_sec: value.pitch_rad_per_sec,
+            heading_rad_per_sec: value.heading_rad_per_sec,
+            bank_rad_per_sec: value.bank_rad_per_sec,
+            nose_gear_angle: value.nose_gear_angle,
+        }
     }
 }
 
@@ -1250,7 +1262,7 @@ impl Display for KillMessage {
         let mut message = format!("$!!{}:{}", self.from, self.to);
         if let Some(reason) = &self.reason {
             message.push(':');
-            message.push_str(&reason);
+            message.push_str(reason);
         };
         write!(f, "{}", message)
     }
@@ -1262,11 +1274,7 @@ impl TryFrom<&[&str]> for KillMessage {
         check_min_num_fields!(fields, 2);
         let first = &fields[0][3..];
 
-        Ok(KillMessage::new(
-            first,
-            fields[1],
-            fields.get(2).map(|x| *x),
-        ))
+        Ok(KillMessage::new(first, fields[1], fields.get(2).copied()))
     }
 }
 
@@ -1659,12 +1667,12 @@ impl FlightPlanAmendmentMessage {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct ClientQueryMessage {
     pub from: String,
     pub to: String,
     pub query_type: ClientQueryType,
-    _hidden: (),
 }
 
 impl Display for ClientQueryMessage {
@@ -1701,7 +1709,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             "ACC" => {
                 let data = fields
                     .get(3)
-                    .ok_or_else(|| FsdMessageParseError::InvalidFieldCount(4, 3))?;
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(4, 3))?;
                 if data.contains("request") {
                     Ok(ClientQueryMessage::new(
                         first,
@@ -1713,7 +1721,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                         let mut data_string = String::new();
                         let mut fields_peekable = fields[3..].iter().peekable();
                         while let Some(field) = fields_peekable.next() {
-                            data_string.push_str(&field);
+                            data_string.push_str(field);
                             if fields_peekable.peek().is_some() {
                                 data_string.push(':');
                             }
@@ -1761,7 +1769,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             "ATC" => {
                 let subject = fields
                     .get(3)
-                    .ok_or_else(|| FsdMessageParseError::InvalidFieldCount(4, 3))?
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(4, 3))?
                     .to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
@@ -1772,7 +1780,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             "FP" => {
                 let subject = fields
                     .get(3)
-                    .ok_or_else(|| FsdMessageParseError::InvalidFieldCount(4, 3))?
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(4, 3))?
                     .to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
@@ -1871,7 +1879,6 @@ impl ClientQueryMessage {
             from: from.as_ref().to_uppercase(),
             to: to.as_ref().to_uppercase(),
             query_type,
-            _hidden: (),
         }
     }
 
@@ -2068,12 +2075,12 @@ impl ClientQueryMessage {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct ClientQueryResponseMessage {
     pub from: String,
     pub to: String,
     pub response_type: ClientResponseType,
-    _hidden: (),
 }
 
 impl Display for ClientQueryResponseMessage {
@@ -2129,7 +2136,7 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
             "IP" => ClientResponseType::PublicIP(
                 fields
                     .get(3)
-                    .ok_or_else(|| FsdMessageParseError::InvalidFieldCount(4, fields.len()))?
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(4, fields.len()))?
                     .to_string(),
             ),
             "ATC" => {
@@ -2166,7 +2173,6 @@ impl ClientQueryResponseMessage {
             from: from.as_ref().to_uppercase(),
             to: to.as_ref().to_uppercase(),
             response_type,
-            _hidden: (),
         }
     }
 
@@ -2263,12 +2269,12 @@ impl HandoffOfferMessage {
     }
 }
 
+#[non_exhaustive]
 #[derive(Debug)]
 pub struct SharedStateMessage {
     pub from: String,
     pub to: String,
     pub shared_state_type: SharedStateType,
-    _hidden: (),
 }
 
 impl Display for SharedStateMessage {
@@ -2293,7 +2299,7 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             "IH" => SharedStateType::IHave(
                 fields
                     .get(4)
-                    .ok_or_else(|| FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
             ),
             "SC" => {
@@ -2304,6 +2310,11 @@ impl TryFrom<&[&str]> for SharedStateMessage {
                 check_min_num_fields!(fields, 6);
                 let altitude = util::parse_altitude(fields[5])?;
                 SharedStateType::TempAltitude(fields[4].to_uppercase(), altitude)
+            }
+            "FA" => {
+                check_min_num_fields!(fields, 6);
+                let altitude = util::parse_altitude(fields[5])?;
+                SharedStateType::FinalAltitude(fields[4].to_uppercase(), altitude)
             }
             "VT" => {
                 check_min_num_fields!(fields, 6);
@@ -2318,7 +2329,7 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             "HC" => SharedStateType::HandoffCancel(
                 fields
                     .get(4)
-                    .ok_or_else(|| FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
             ),
             _ => {
@@ -2337,7 +2348,6 @@ impl SharedStateMessage {
             from: from.as_ref().to_uppercase(),
             to: to.as_ref().to_uppercase(),
             shared_state_type,
-            _hidden: (),
         }
     }
 
@@ -2455,18 +2465,3 @@ impl HandoffAcceptMessage {
         }
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
