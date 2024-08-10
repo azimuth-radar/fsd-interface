@@ -549,7 +549,7 @@ impl AuthenticationResponseMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TextMessage {
     pub from: String,
     pub to: String,
@@ -588,7 +588,7 @@ impl TextMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FrequencyMessage {
     pub from: String,
     pub to: Vec<RadioFrequency>,
