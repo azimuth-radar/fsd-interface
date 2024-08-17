@@ -502,7 +502,7 @@ pub enum ClientQueryType {
     SetFinalAltitude(String, u32),                 //FA
     SetTempAltitude(String, u32),                  //TA
     SetBeaconCode(String, TransponderCode),        //BC
-    SetScratchpad(String, String),                 //SC
+    SetScratchpad(String, ScratchPad),             //SC
     SetVoiceType(String, VoiceCapability),         //VT
     AircraftConfigurationRequest,                  //ACC
     AircraftConfigurationResponse(AircraftConfig), //ACC
@@ -622,7 +622,7 @@ pub enum SharedStateType {
     ID,
     DI,
     IHave(String),
-    ScratchPad(String, String),
+    ScratchPad(String, ScratchPad),
     TempAltitude(String, u32),
     FinalAltitude(String, u32),
     VoiceType(String, VoiceCapability),
@@ -651,6 +651,74 @@ impl Display for SharedStateType {
             }
             SharedStateType::BeaconCode(subject, code) => write!(f, "BC:{}:{}", subject, code),
             SharedStateType::HandoffCancel(subject) => write!(f, "HC:{}", subject),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Operator {
+    Exactly,
+    OrLess,
+    OrGreater,
+}
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Self::Exactly => write!(f, "="),
+            Self::OrLess => write!(f, "-"),
+            Self::OrGreater => write!(f, "+"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ScratchPad {
+    PlainTextOrDirect(String),
+    RateOfClimbDescent(u32),
+    Heading(u32),
+    Speed(u32),
+    Mach(u32),
+    SpeedOperator(Operator),
+    RateOfClimbDescentOperator(Operator),
+}
+impl FromStr for ScratchPad {
+    type Err = FsdMessageParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // EuroScope scratchpad use to sync clearances
+        if let Some(Ok(h)) = s.strip_prefix('H').map(str::parse) {
+            return Ok(Self::Heading(h));
+        }
+        if let Some(Ok(r)) = s.strip_prefix('R').map(str::parse) {
+            return Ok(Self::RateOfClimbDescent(r));
+        }
+        if let Some(Ok(speed)) = s.strip_prefix('S').map(str::parse) {
+            return Ok(Self::Speed(speed));
+        }
+        if let Some(Ok(m)) = s.strip_prefix('M').map(str::parse) {
+            return Ok(Self::Mach(m));
+        }
+        match s {
+            // ASP/ARC operator syntax from EuroScope TopSky plugin
+            "/ASP=/" => Ok(Self::SpeedOperator(Operator::Exactly)),
+            "/ASP-/" => Ok(Self::SpeedOperator(Operator::OrLess)),
+            "/ASP+/" => Ok(Self::SpeedOperator(Operator::OrGreater)),
+            "/ARC=/" => Ok(Self::RateOfClimbDescentOperator(Operator::Exactly)),
+            "/ARC-/" => Ok(Self::RateOfClimbDescentOperator(Operator::OrLess)),
+            "/ARC+/" => Ok(Self::RateOfClimbDescentOperator(Operator::OrGreater)),
+            text => Ok(ScratchPad::PlainTextOrDirect(text.to_string())),
+        }
+    }
+}
+impl Display for ScratchPad {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RateOfClimbDescent(r) => write!(f, "R{r}"),
+            Self::Heading(h) => write!(f, "H{h}"),
+            Self::Speed(speed) => write!(f, "S{speed}"),
+            Self::Mach(m) => write!(f, "{m}"),
+            Self::SpeedOperator(op) => write!(f, "/ASP{op}/"),
+            Self::RateOfClimbDescentOperator(op) => write!(f, "/ARC{op}/"),
+            Self::PlainTextOrDirect(text) => write!(f, "{text}"),
         }
     }
 }

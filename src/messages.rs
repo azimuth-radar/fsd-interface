@@ -13,7 +13,7 @@ use crate::{
     },
     errors::{FsdError, FsdMessageParseError},
     structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode},
-    util,
+    util, ScratchPad,
 };
 
 pub const SERVER_CALLSIGN: &str = "SERVER";
@@ -1742,10 +1742,11 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             )),
             "SC" => {
                 check_min_num_fields!(fields, 5);
+                let scratchpad_contents = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetScratchpad(fields[3].to_uppercase(), fields[4].to_string()),
+                    ClientQueryType::SetScratchpad(fields[3].to_uppercase(), scratchpad_contents),
                 ))
             }
             "FA" => {
@@ -2016,15 +2017,12 @@ impl ClientQueryMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         subject: impl AsRef<str>,
-        scratchpad_contents: impl Into<String>,
+        scratchpad_contents: ScratchPad,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetScratchpad(
-                subject.as_ref().to_uppercase(),
-                scratchpad_contents.into(),
-            ),
+            ClientQueryType::SetScratchpad(subject.as_ref().to_uppercase(), scratchpad_contents),
         )
     }
     pub fn set_voice_type(
@@ -2304,7 +2302,8 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             ),
             "SC" => {
                 check_min_num_fields!(fields, 6);
-                SharedStateType::ScratchPad(fields[4].to_uppercase(), fields[5].to_string())
+                let scratchpad_contents = fields[5].parse()?;
+                SharedStateType::ScratchPad(fields[4].to_uppercase(), scratchpad_contents)
             }
             "TA" => {
                 check_min_num_fields!(fields, 6);
@@ -2372,15 +2371,12 @@ impl SharedStateMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         subject: impl AsRef<str>,
-        scratchpad_contents: impl Into<String>,
+        scratchpad_contents: ScratchPad,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::ScratchPad(
-                subject.as_ref().to_uppercase(),
-                scratchpad_contents.into(),
-            ),
+            SharedStateType::ScratchPad(subject.as_ref().to_uppercase(), scratchpad_contents),
         )
     }
     pub fn temp_altitude(
