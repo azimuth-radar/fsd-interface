@@ -477,6 +477,48 @@ impl FsdMessageType {
         ))
     }
 }
+impl Display for FsdMessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FsdMessageType::AtcRegisterMessage(m) => m.fmt(f),
+            FsdMessageType::PilotRegisterMessage(m) => m.fmt(f),
+            FsdMessageType::AtcDeregisterMessage(m) => m.fmt(f),
+            FsdMessageType::PilotDeregisterMessage(m) => m.fmt(f),
+            FsdMessageType::AtcPositionUpdateMessage(m) => m.fmt(f),
+            FsdMessageType::AtcSecondaryVisCentreMessage(m) => m.fmt(f),
+            FsdMessageType::PilotPositionUpdateMessage(m) => m.fmt(f),
+            FsdMessageType::AuthenticationChallengeMessage(m) => m.fmt(f),
+            FsdMessageType::AuthenticationResponseMessage(m) => m.fmt(f),
+            FsdMessageType::TextMessage(m) => m.fmt(f),
+            FsdMessageType::FrequencyMessage(m) => m.fmt(f),
+            FsdMessageType::ChangeServerMessage(m) => m.fmt(f),
+            FsdMessageType::InitialServerHandshakeMessage(m) => m.fmt(f),
+            FsdMessageType::InitialClientHandshakeMessage(m) => m.fmt(f),
+            FsdMessageType::SendFastPositionUpdatesMessage(m) => m.fmt(f),
+            FsdMessageType::VelocityPositionStoppedMessage(m) => m.fmt(f),
+            FsdMessageType::VelocityPositionSlowMessage(m) => m.fmt(f),
+            FsdMessageType::VelocityPositionFastMessage(m) => m.fmt(f),
+            FsdMessageType::KillMessage(m) => m.fmt(f),
+            FsdMessageType::MetarRequestMessage(m) => m.fmt(f),
+            FsdMessageType::MetarResponseMessage(m) => m.fmt(f),
+            FsdMessageType::PingMessage(m) => m.fmt(f),
+            FsdMessageType::PongMessage(m) => m.fmt(f),
+            FsdMessageType::PlaneInfoRequestMessage(m) => m.fmt(f),
+            FsdMessageType::PlaneInfoResponseMessage(m) => m.fmt(f),
+            FsdMessageType::FsdErrorMessage(m) => m.fmt(f),
+            FsdMessageType::FlightPlanMessage(m) => m.fmt(f),
+            FsdMessageType::FlightPlanAmendmentMessage(m) => m.fmt(f),
+            m @ FsdMessageType::FSInnPlaneInformationRequestMessage => m.fmt(f),
+            m @ FsdMessageType::FSInnPlaneInformationResponseMessage => m.fmt(f),
+            m @ FsdMessageType::ServerHeartbeat => m.fmt(f),
+            FsdMessageType::ClientQueryMessage(m) => m.fmt(f),
+            FsdMessageType::ClientQueryResponseMessage(m) => m.fmt(f),
+            FsdMessageType::HandoffOfferMessage(m) => m.fmt(f),
+            FsdMessageType::HandoffAcceptMessage(m) => m.fmt(f),
+            FsdMessageType::SharedStateMessage(m) => m.fmt(f),
+        }
+    }
+}
 
 #[allow(unused)]
 #[derive(Debug)]
