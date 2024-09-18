@@ -714,6 +714,20 @@ impl Display for Operator {
 }
 
 #[derive(Debug, Clone)]
+pub enum GroundState {
+    NoState,
+    OnFrequency,
+    DeIcing,
+    Startup,
+    Pushback,
+    Taxi,
+    LineUp,
+    TakeOff,
+    TaxiIn,
+    OnBlock,
+}
+
+#[derive(Debug, Clone)]
 pub enum ScratchPad {
     PlainTextOrDirect(String),
     RateOfClimbDescent(u32),
@@ -722,6 +736,11 @@ pub enum ScratchPad {
     Mach(u32),
     SpeedOperator(Operator),
     RateOfClimbDescentOperator(Operator),
+    Stand(String),
+    CancelledStand,
+    ManualStand(String, String),
+    CancelledManualStand,
+    GroundState(GroundState),
 }
 impl FromStr for ScratchPad {
     type Err = FsdMessageParseError;
@@ -739,6 +758,16 @@ impl FromStr for ScratchPad {
         if let Some(Ok(m)) = s.strip_prefix('M').map(str::parse) {
             return Ok(Self::Mach(m));
         }
+        if s.len() > 6 && s.starts_with("GRP/S/") {
+            return Ok(Self::Stand(s[6..].to_string()));
+        }
+        if s.len() > 6 && s.starts_with("GRP/M/") {
+            let mut split = s.split('/');
+            return Ok(Self::ManualStand(
+                split.next().unwrap_or("ZZZZ").to_string(),
+                split.next().unwrap_or("").to_string(),
+            ));
+        }
         match s {
             // ASP/ARC operator syntax from EuroScope TopSky plugin
             "/ASP=/" => Ok(Self::SpeedOperator(Operator::Exactly)),
@@ -747,6 +776,21 @@ impl FromStr for ScratchPad {
             "/ARC=/" => Ok(Self::RateOfClimbDescentOperator(Operator::Exactly)),
             "/ARC-/" => Ok(Self::RateOfClimbDescentOperator(Operator::OrLess)),
             "/ARC+/" => Ok(Self::RateOfClimbDescentOperator(Operator::OrGreater)),
+            // Stand assignment cancellations from EuroScope GroundRadar plugin
+            "GRP/S/" => Ok(Self::CancelledStand),
+            "GRP/M/" => Ok(Self::CancelledManualStand),
+            // Ground states, mixed plain EuroScope and GroundRadar plugin
+            "NSTS" => Ok(Self::GroundState(GroundState::NoState)),
+            // TODO: Why is this a separate state?
+            "NOSTATE" => Ok(Self::GroundState(GroundState::NoState)),
+            "ONFREQ" => Ok(Self::GroundState(GroundState::OnFrequency)),
+            "DE-ICE" => Ok(Self::GroundState(GroundState::DeIcing)),
+            "STUP" => Ok(Self::GroundState(GroundState::Startup)),
+            "PUSH" => Ok(Self::GroundState(GroundState::Pushback)),
+            "LINEUP" => Ok(Self::GroundState(GroundState::LineUp)),
+            "TXIN" => Ok(Self::GroundState(GroundState::TaxiIn)),
+            "DEPA" => Ok(Self::GroundState(GroundState::TakeOff)),
+            "PARK" => Ok(Self::GroundState(GroundState::OnBlock)),
             text => Ok(ScratchPad::PlainTextOrDirect(text.to_string())),
         }
     }
@@ -761,6 +805,20 @@ impl Display for ScratchPad {
             Self::SpeedOperator(op) => write!(f, "/ASP{op}/"),
             Self::RateOfClimbDescentOperator(op) => write!(f, "/ARC{op}/"),
             Self::PlainTextOrDirect(text) => write!(f, "{text}"),
+            Self::Stand(stand) => write!(f, "GRP/S/{stand}"),
+            Self::CancelledStand => write!(f, "GRP/S/"),
+            Self::ManualStand(icao, stand) => write!(f, "GRP/M/{icao}/{stand}"),
+            Self::CancelledManualStand => write!(f, "GRP/M"),
+            Self::GroundState(GroundState::NoState) => write!(f, "NSTS"),
+            Self::GroundState(GroundState::OnFrequency) => write!(f, "ONFREQ"),
+            Self::GroundState(GroundState::DeIcing) => write!(f, "DE-ICE"),
+            Self::GroundState(GroundState::Startup) => write!(f, "STUP"),
+            Self::GroundState(GroundState::Pushback) => write!(f, "PUSH"),
+            Self::GroundState(GroundState::Taxi) => write!(f, "TAXI"),
+            Self::GroundState(GroundState::LineUp) => write!(f, "LINEUP"),
+            Self::GroundState(GroundState::TakeOff) => write!(f, "DEPA"),
+            Self::GroundState(GroundState::TaxiIn) => write!(f, "TXIN"),
+            Self::GroundState(GroundState::OnBlock) => write!(f, "PARK"),
         }
     }
 }
