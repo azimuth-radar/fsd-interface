@@ -726,6 +726,22 @@ pub enum GroundState {
     TaxiIn,
     OnBlock,
 }
+impl Display for GroundState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoState => write!(f, "NSTS"),
+            Self::OnFrequency => write!(f, "ONFREQ"),
+            Self::DeIcing => write!(f, "DE-ICE"),
+            Self::Startup => write!(f, "STUP"),
+            Self::Pushback => write!(f, "PUSH"),
+            Self::Taxi => write!(f, "TAXI"),
+            Self::LineUp => write!(f, "LINEUP"),
+            Self::TakeOff => write!(f, "DEPA"),
+            Self::TaxiIn => write!(f, "TXIN"),
+            Self::OnBlock => write!(f, "PARK"),
+        }
+    }
+}
 
 #[derive(Debug, Clone)]
 pub enum ScratchPad {
@@ -740,6 +756,8 @@ pub enum ScratchPad {
     CancelledStand,
     ManualStand(String, String),
     CancelledManualStand,
+    ClearanceReceived,
+    ClearanceCancelled,
     GroundState(GroundState),
 }
 impl FromStr for ScratchPad {
@@ -785,12 +803,15 @@ impl FromStr for ScratchPad {
             "NOSTATE" => Ok(Self::GroundState(GroundState::NoState)),
             "ONFREQ" => Ok(Self::GroundState(GroundState::OnFrequency)),
             "DE-ICE" => Ok(Self::GroundState(GroundState::DeIcing)),
-            "STUP" => Ok(Self::GroundState(GroundState::Startup)),
+            "STUP" | "ST-UP" => Ok(Self::GroundState(GroundState::Startup)),
             "PUSH" => Ok(Self::GroundState(GroundState::Pushback)),
+            "TAXI" => Ok(Self::GroundState(GroundState::Taxi)),
             "LINEUP" => Ok(Self::GroundState(GroundState::LineUp)),
             "TXIN" => Ok(Self::GroundState(GroundState::TaxiIn)),
             "DEPA" => Ok(Self::GroundState(GroundState::TakeOff)),
             "PARK" => Ok(Self::GroundState(GroundState::OnBlock)),
+            "CLEA" => Ok(Self::ClearanceReceived),
+            "NOTC" => Ok(Self::ClearanceCancelled),
             text => Ok(ScratchPad::PlainTextOrDirect(text.to_string())),
         }
     }
@@ -809,16 +830,9 @@ impl Display for ScratchPad {
             Self::CancelledStand => write!(f, "GRP/S/"),
             Self::ManualStand(icao, stand) => write!(f, "GRP/M/{icao}/{stand}"),
             Self::CancelledManualStand => write!(f, "GRP/M"),
-            Self::GroundState(GroundState::NoState) => write!(f, "NSTS"),
-            Self::GroundState(GroundState::OnFrequency) => write!(f, "ONFREQ"),
-            Self::GroundState(GroundState::DeIcing) => write!(f, "DE-ICE"),
-            Self::GroundState(GroundState::Startup) => write!(f, "STUP"),
-            Self::GroundState(GroundState::Pushback) => write!(f, "PUSH"),
-            Self::GroundState(GroundState::Taxi) => write!(f, "TAXI"),
-            Self::GroundState(GroundState::LineUp) => write!(f, "LINEUP"),
-            Self::GroundState(GroundState::TakeOff) => write!(f, "DEPA"),
-            Self::GroundState(GroundState::TaxiIn) => write!(f, "TXIN"),
-            Self::GroundState(GroundState::OnBlock) => write!(f, "PARK"),
+            Self::GroundState(gs) => gs.fmt(f),
+            Self::ClearanceReceived => write!(f, "CLEA"),
+            Self::ClearanceCancelled => write!(f, "NOTC"),
         }
     }
 }
