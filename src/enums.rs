@@ -713,7 +713,7 @@ impl Display for Operator {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Copy, Clone)]
 pub enum GroundState {
     NoState,
     OnFrequency,
