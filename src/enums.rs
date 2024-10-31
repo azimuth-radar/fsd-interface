@@ -283,7 +283,7 @@ impl Display for TransponderMode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum FsdMessageType {
     AtcRegisterMessage(AtcRegisterMessage),
     PilotRegisterMessage(PilotRegisterMessage),
@@ -521,7 +521,7 @@ impl Display for FsdMessageType {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ClientQueryType {
     IsValidATC(String), //ATC
     Capabilities,       //CAPS
@@ -598,7 +598,7 @@ impl Display for ClientQueryType {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum AtisLine {
     VoiceServer(String),
     TextLine(String),
@@ -618,7 +618,7 @@ impl Display for AtisLine {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ClientResponseType {
     Com1Freq(RadioFrequency),
     ATIS(AtisLine),
@@ -658,7 +658,7 @@ impl Display for ClientResponseType {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SharedStateType {
     Version,
     ID,
