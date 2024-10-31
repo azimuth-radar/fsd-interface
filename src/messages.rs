@@ -175,7 +175,7 @@ impl PilotRegisterMessage {
 }
 
 /// Sent by an ATC client before disconnecting
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AtcDeregisterMessage {
     pub from: String,
     pub cid: String,
@@ -206,7 +206,7 @@ impl AtcDeregisterMessage {
 }
 
 /// Sent by a pilot client before disconnecting
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PilotDeregisterMessage {
     pub from: String,
     pub cid: String,
@@ -315,7 +315,7 @@ impl AtcPositionUpdateMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AtcSecondaryVisCentreMessage {
     pub callsign: String,
     pub index: usize,
@@ -481,7 +481,7 @@ impl PilotPositionUpdateMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AuthenticationChallengeMessage {
     pub from: String,
     pub to: String,
@@ -515,7 +515,7 @@ impl AuthenticationChallengeMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AuthenticationResponseMessage {
     pub from: String,
     pub to: String,
@@ -636,7 +636,7 @@ impl FrequencyMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ChangeServerMessage {
     pub from: String,
     pub to: String,
@@ -669,7 +669,7 @@ impl ChangeServerMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InitialServerHandshakeMessage {
     pub from: String,
     pub to: String,
@@ -715,7 +715,7 @@ impl InitialServerHandshakeMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InitialClientHandshakeMessage {
     pub from: String,
     pub to: String,
@@ -800,7 +800,7 @@ impl InitialClientHandshakeMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SendFastPositionUpdatesMessage {
     pub from: String,
     pub to: String,
@@ -837,7 +837,7 @@ impl SendFastPositionUpdatesMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VelocityPositionStoppedMessage {
     pub from: String,
     pub latitude: f64,
@@ -935,7 +935,7 @@ impl VelocityPositionStoppedMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VelocityPositionSlowMessage {
     pub from: String,
     pub latitude: f64,
@@ -1081,7 +1081,7 @@ impl VelocityPositionSlowMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VelocityPositionFastMessage {
     pub from: String,
     pub latitude: f64,
@@ -1250,7 +1250,7 @@ impl VelocityPositionFastMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct KillMessage {
     pub from: String,
     pub to: String,
@@ -1292,7 +1292,7 @@ impl KillMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MetarRequestMessage {
     pub from: String,
     pub to: String,
@@ -1325,7 +1325,7 @@ impl MetarRequestMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MetarResponseMessage {
     pub from: String,
     pub to: String,
@@ -1358,7 +1358,7 @@ impl MetarResponseMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PingMessage {
     pub from: String,
     pub to: String,
@@ -1397,7 +1397,7 @@ impl PingMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PongMessage {
     pub from: String,
     pub to: String,
@@ -1436,7 +1436,7 @@ impl PongMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PlaneInfoRequestMessage {
     pub from: String,
     pub to: String,
@@ -1467,7 +1467,7 @@ impl PlaneInfoRequestMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PlaneInfoResponseMessage {
     pub from: String,
     pub to: String,
@@ -1576,7 +1576,7 @@ impl FsdErrorMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FlightPlanMessage {
     pub to: String,
     pub callsign: String,
@@ -1616,7 +1616,7 @@ impl FlightPlanMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FlightPlanAmendmentMessage {
     pub from: String,
     pub to: String,
@@ -1668,7 +1668,7 @@ impl FlightPlanAmendmentMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ClientQueryMessage {
     pub from: String,
     pub to: String,
@@ -2074,7 +2074,7 @@ impl ClientQueryMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ClientQueryResponseMessage {
     pub from: String,
     pub to: String,
@@ -2233,7 +2233,7 @@ impl ClientQueryResponseMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct HandoffOfferMessage {
     pub from: String,
     pub to: String,
@@ -2268,7 +2268,7 @@ impl HandoffOfferMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SharedStateMessage {
     pub from: String,
     pub to: String,
@@ -2428,7 +2428,7 @@ impl SharedStateMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct HandoffAcceptMessage {
     pub from: String,
     pub to: String,
