@@ -4,6 +4,8 @@
 
 use std::fmt::Display;
 
+use chrono::NaiveDateTime;
+
 use crate::{
     aircraft_config::AircraftConfig,
     enums::{
@@ -1868,6 +1870,23 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 fields[1],
                 ClientQueryType::INF,
             )),
+            "SIMTIME" => {
+                check_min_num_fields!(fields, 4);
+                let time = match NaiveDateTime::parse_from_str(fields[3], "%Y%m%d%H%M%S") {
+                    Ok(naive_time) => naive_time.and_utc(),
+                    Err(e) => {
+                        return Err(FsdMessageParseError::InvalidTime(format!(
+                            "SIMTIME uses incorrect format: {}, {e}",
+                            fields[3]
+                        )));
+                    }
+                };
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::Simtime(time),
+                ))
+            }
             _ => Err(FsdMessageParseError::UnknownMessageType(
                 fields[2].to_string(),
             )),
