@@ -3,6 +3,7 @@ use std::{fmt::Display, str::FromStr};
 use crate::messages::*;
 use crate::structs::{RadioFrequency, TransponderCode};
 use crate::{aircraft_config::AircraftConfig, errors::FsdMessageParseError};
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClientCapability {
@@ -548,6 +549,7 @@ pub enum ClientQueryType {
     SetVoiceType(String, VoiceCapability),         //VT
     AircraftConfigurationRequest,                  //ACC
     AircraftConfigurationResponse(AircraftConfig), //ACC
+    Simtime(DateTime<Utc>),                        // SIMTIME
     //NewInfo, //NEWINFO
     NewATIS(char, String, String), //NEWATIS
                                    //Estimate, //EST
@@ -592,6 +594,9 @@ impl Display for ClientQueryType {
             }
             ClientQueryType::NewATIS(letter, wind, pressure) => {
                 write!(f, "NEWATIS:ATIS {}:  {} - {}", letter, wind, pressure)
+            }
+            ClientQueryType::Simtime(time) => {
+                write!(f, "SIMTIME:{}", time.format("Y%m%d%H%M%S"))
             }
         }
     }
