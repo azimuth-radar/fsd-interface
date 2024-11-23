@@ -3,6 +3,7 @@ use std::{fmt::Display, str::FromStr};
 use crate::messages::*;
 use crate::structs::{RadioFrequency, TransponderCode};
 use crate::{aircraft_config::AircraftConfig, errors::FsdMessageParseError};
+use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ClientCapability {
@@ -283,7 +284,7 @@ impl Display for TransponderMode {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum FsdMessageType {
     AtcRegisterMessage(AtcRegisterMessage),
     PilotRegisterMessage(PilotRegisterMessage),
@@ -477,9 +478,51 @@ impl FsdMessageType {
         ))
     }
 }
+impl Display for FsdMessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FsdMessageType::AtcRegisterMessage(m) => m.fmt(f),
+            FsdMessageType::PilotRegisterMessage(m) => m.fmt(f),
+            FsdMessageType::AtcDeregisterMessage(m) => m.fmt(f),
+            FsdMessageType::PilotDeregisterMessage(m) => m.fmt(f),
+            FsdMessageType::AtcPositionUpdateMessage(m) => m.fmt(f),
+            FsdMessageType::AtcSecondaryVisCentreMessage(m) => m.fmt(f),
+            FsdMessageType::PilotPositionUpdateMessage(m) => m.fmt(f),
+            FsdMessageType::AuthenticationChallengeMessage(m) => m.fmt(f),
+            FsdMessageType::AuthenticationResponseMessage(m) => m.fmt(f),
+            FsdMessageType::TextMessage(m) => m.fmt(f),
+            FsdMessageType::FrequencyMessage(m) => m.fmt(f),
+            FsdMessageType::ChangeServerMessage(m) => m.fmt(f),
+            FsdMessageType::InitialServerHandshakeMessage(m) => m.fmt(f),
+            FsdMessageType::InitialClientHandshakeMessage(m) => m.fmt(f),
+            FsdMessageType::SendFastPositionUpdatesMessage(m) => m.fmt(f),
+            FsdMessageType::VelocityPositionStoppedMessage(m) => m.fmt(f),
+            FsdMessageType::VelocityPositionSlowMessage(m) => m.fmt(f),
+            FsdMessageType::VelocityPositionFastMessage(m) => m.fmt(f),
+            FsdMessageType::KillMessage(m) => m.fmt(f),
+            FsdMessageType::MetarRequestMessage(m) => m.fmt(f),
+            FsdMessageType::MetarResponseMessage(m) => m.fmt(f),
+            FsdMessageType::PingMessage(m) => m.fmt(f),
+            FsdMessageType::PongMessage(m) => m.fmt(f),
+            FsdMessageType::PlaneInfoRequestMessage(m) => m.fmt(f),
+            FsdMessageType::PlaneInfoResponseMessage(m) => m.fmt(f),
+            FsdMessageType::FsdErrorMessage(m) => m.fmt(f),
+            FsdMessageType::FlightPlanMessage(m) => m.fmt(f),
+            FsdMessageType::FlightPlanAmendmentMessage(m) => m.fmt(f),
+            m @ FsdMessageType::FSInnPlaneInformationRequestMessage => m.fmt(f),
+            m @ FsdMessageType::FSInnPlaneInformationResponseMessage => m.fmt(f),
+            m @ FsdMessageType::ServerHeartbeat => m.fmt(f),
+            FsdMessageType::ClientQueryMessage(m) => m.fmt(f),
+            FsdMessageType::ClientQueryResponseMessage(m) => m.fmt(f),
+            FsdMessageType::HandoffOfferMessage(m) => m.fmt(f),
+            FsdMessageType::HandoffAcceptMessage(m) => m.fmt(f),
+            FsdMessageType::SharedStateMessage(m) => m.fmt(f),
+        }
+    }
+}
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ClientQueryType {
     IsValidATC(String), //ATC
     Capabilities,       //CAPS
@@ -502,10 +545,11 @@ pub enum ClientQueryType {
     SetFinalAltitude(String, u32),                 //FA
     SetTempAltitude(String, u32),                  //TA
     SetBeaconCode(String, TransponderCode),        //BC
-    SetScratchpad(String, String),                 //SC
+    SetScratchpad(String, ScratchPad),             //SC
     SetVoiceType(String, VoiceCapability),         //VT
     AircraftConfigurationRequest,                  //ACC
     AircraftConfigurationResponse(AircraftConfig), //ACC
+    Simtime(DateTime<Utc>),                        // SIMTIME
     //NewInfo, //NEWINFO
     NewATIS(char, String, String), //NEWATIS
                                    //Estimate, //EST
@@ -551,12 +595,15 @@ impl Display for ClientQueryType {
             ClientQueryType::NewATIS(letter, wind, pressure) => {
                 write!(f, "NEWATIS:ATIS {}:  {} - {}", letter, wind, pressure)
             }
+            ClientQueryType::Simtime(time) => {
+                write!(f, "SIMTIME:{}", time.format("Y%m%d%H%M%S"))
+            }
         }
     }
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum AtisLine {
     VoiceServer(String),
     TextLine(String),
@@ -576,7 +623,7 @@ impl Display for AtisLine {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum ClientResponseType {
     Com1Freq(RadioFrequency),
     ATIS(AtisLine),
@@ -616,13 +663,13 @@ impl Display for ClientResponseType {
 }
 
 #[allow(unused)]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SharedStateType {
     Version,
     ID,
     DI,
     IHave(String),
-    ScratchPad(String, String),
+    ScratchPad(String, ScratchPad),
     TempAltitude(String, u32),
     FinalAltitude(String, u32),
     VoiceType(String, VoiceCapability),
@@ -651,6 +698,146 @@ impl Display for SharedStateType {
             }
             SharedStateType::BeaconCode(subject, code) => write!(f, "BC:{}:{}", subject, code),
             SharedStateType::HandoffCancel(subject) => write!(f, "HC:{}", subject),
+        }
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Operator {
+    Exactly,
+    OrLess,
+    OrGreater,
+}
+impl Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match *self {
+            Self::Exactly => write!(f, "="),
+            Self::OrLess => write!(f, "-"),
+            Self::OrGreater => write!(f, "+"),
+        }
+    }
+}
+
+#[derive(Debug, Copy, Clone)]
+pub enum GroundState {
+    NoState,
+    OnFrequency,
+    DeIcing,
+    Startup,
+    Pushback,
+    Taxi,
+    LineUp,
+    TakeOff,
+    TaxiIn,
+    OnBlock,
+}
+impl Display for GroundState {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::NoState => write!(f, "NSTS"),
+            Self::OnFrequency => write!(f, "ONFREQ"),
+            Self::DeIcing => write!(f, "DE-ICE"),
+            Self::Startup => write!(f, "STUP"),
+            Self::Pushback => write!(f, "PUSH"),
+            Self::Taxi => write!(f, "TAXI"),
+            Self::LineUp => write!(f, "LINEUP"),
+            Self::TakeOff => write!(f, "DEPA"),
+            Self::TaxiIn => write!(f, "TXIN"),
+            Self::OnBlock => write!(f, "PARK"),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
+pub enum ScratchPad {
+    PlainTextOrDirect(String),
+    RateOfClimbDescent(u32),
+    Heading(u32),
+    Speed(u32),
+    Mach(u32),
+    SpeedOperator(Operator),
+    RateOfClimbDescentOperator(Operator),
+    Stand(String),
+    CancelledStand,
+    ManualStand(String, String),
+    CancelledManualStand,
+    ClearanceReceived,
+    ClearanceCancelled,
+    GroundState(GroundState),
+}
+impl FromStr for ScratchPad {
+    type Err = FsdMessageParseError;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // EuroScope scratchpad use to sync clearances
+        if let Some(Ok(h)) = s.strip_prefix('H').map(str::parse) {
+            return Ok(Self::Heading(h));
+        }
+        if let Some(Ok(r)) = s.strip_prefix('R').map(str::parse) {
+            return Ok(Self::RateOfClimbDescent(r));
+        }
+        if let Some(Ok(speed)) = s.strip_prefix('S').map(str::parse) {
+            return Ok(Self::Speed(speed));
+        }
+        if let Some(Ok(m)) = s.strip_prefix('M').map(str::parse) {
+            return Ok(Self::Mach(m));
+        }
+        if s.len() > 6 && s.starts_with("GRP/S/") {
+            return Ok(Self::Stand(s[6..].to_string()));
+        }
+        if s.len() > 6 && s.starts_with("GRP/M/") {
+            let mut split = s.split('/');
+            return Ok(Self::ManualStand(
+                split.next().unwrap_or("ZZZZ").to_string(),
+                split.next().unwrap_or("").to_string(),
+            ));
+        }
+        match s {
+            // ASP/ARC operator syntax from EuroScope TopSky plugin
+            "/ASP=/" => Ok(Self::SpeedOperator(Operator::Exactly)),
+            "/ASP-/" => Ok(Self::SpeedOperator(Operator::OrLess)),
+            "/ASP+/" => Ok(Self::SpeedOperator(Operator::OrGreater)),
+            "/ARC=/" => Ok(Self::RateOfClimbDescentOperator(Operator::Exactly)),
+            "/ARC-/" => Ok(Self::RateOfClimbDescentOperator(Operator::OrLess)),
+            "/ARC+/" => Ok(Self::RateOfClimbDescentOperator(Operator::OrGreater)),
+            // Stand assignment cancellations from EuroScope GroundRadar plugin
+            "GRP/S/" => Ok(Self::CancelledStand),
+            "GRP/M/" => Ok(Self::CancelledManualStand),
+            // Ground states, mixed plain EuroScope and GroundRadar plugin
+            "NSTS" => Ok(Self::GroundState(GroundState::NoState)),
+            // TODO: Why is this a separate state?
+            "NOSTATE" => Ok(Self::GroundState(GroundState::NoState)),
+            "ONFREQ" => Ok(Self::GroundState(GroundState::OnFrequency)),
+            "DE-ICE" => Ok(Self::GroundState(GroundState::DeIcing)),
+            "STUP" | "ST-UP" => Ok(Self::GroundState(GroundState::Startup)),
+            "PUSH" => Ok(Self::GroundState(GroundState::Pushback)),
+            "TAXI" => Ok(Self::GroundState(GroundState::Taxi)),
+            "LINEUP" => Ok(Self::GroundState(GroundState::LineUp)),
+            "TXIN" => Ok(Self::GroundState(GroundState::TaxiIn)),
+            "DEPA" => Ok(Self::GroundState(GroundState::TakeOff)),
+            "PARK" => Ok(Self::GroundState(GroundState::OnBlock)),
+            "CLEA" => Ok(Self::ClearanceReceived),
+            "NOTC" => Ok(Self::ClearanceCancelled),
+            text => Ok(ScratchPad::PlainTextOrDirect(text.to_string())),
+        }
+    }
+}
+impl Display for ScratchPad {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::RateOfClimbDescent(r) => write!(f, "R{r}"),
+            Self::Heading(h) => write!(f, "H{h}"),
+            Self::Speed(speed) => write!(f, "S{speed}"),
+            Self::Mach(m) => write!(f, "{m}"),
+            Self::SpeedOperator(op) => write!(f, "/ASP{op}/"),
+            Self::RateOfClimbDescentOperator(op) => write!(f, "/ARC{op}/"),
+            Self::PlainTextOrDirect(text) => write!(f, "{text}"),
+            Self::Stand(stand) => write!(f, "GRP/S/{stand}"),
+            Self::CancelledStand => write!(f, "GRP/S/"),
+            Self::ManualStand(icao, stand) => write!(f, "GRP/M/{icao}/{stand}"),
+            Self::CancelledManualStand => write!(f, "GRP/M"),
+            Self::GroundState(gs) => gs.fmt(f),
+            Self::ClearanceReceived => write!(f, "CLEA"),
+            Self::ClearanceCancelled => write!(f, "NOTC"),
         }
     }
 }

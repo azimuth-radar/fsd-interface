@@ -4,6 +4,8 @@
 
 use std::fmt::Display;
 
+use chrono::NaiveDateTime;
+
 use crate::{
     aircraft_config::AircraftConfig,
     enums::{
@@ -13,7 +15,7 @@ use crate::{
     },
     errors::{FsdError, FsdMessageParseError},
     structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode},
-    util,
+    util, ScratchPad,
 };
 
 pub const SERVER_CALLSIGN: &str = "SERVER";
@@ -175,7 +177,7 @@ impl PilotRegisterMessage {
 }
 
 /// Sent by an ATC client before disconnecting
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AtcDeregisterMessage {
     pub from: String,
     pub cid: String,
@@ -206,7 +208,7 @@ impl AtcDeregisterMessage {
 }
 
 /// Sent by a pilot client before disconnecting
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PilotDeregisterMessage {
     pub from: String,
     pub cid: String,
@@ -237,7 +239,7 @@ impl PilotDeregisterMessage {
 }
 
 /// Sent at regular intervals by an ATC client to update the server with its position
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct AtcPositionUpdateMessage {
     pub callsign: String,
     pub frequencies: Vec<RadioFrequency>,
@@ -315,7 +317,7 @@ impl AtcPositionUpdateMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AtcSecondaryVisCentreMessage {
     pub callsign: String,
     pub index: usize,
@@ -481,7 +483,7 @@ impl PilotPositionUpdateMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AuthenticationChallengeMessage {
     pub from: String,
     pub to: String,
@@ -515,7 +517,7 @@ impl AuthenticationChallengeMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct AuthenticationResponseMessage {
     pub from: String,
     pub to: String,
@@ -549,7 +551,7 @@ impl AuthenticationResponseMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct TextMessage {
     pub from: String,
     pub to: String,
@@ -588,7 +590,7 @@ impl TextMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct FrequencyMessage {
     pub from: String,
     pub to: Vec<RadioFrequency>,
@@ -636,7 +638,7 @@ impl FrequencyMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ChangeServerMessage {
     pub from: String,
     pub to: String,
@@ -669,7 +671,7 @@ impl ChangeServerMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InitialServerHandshakeMessage {
     pub from: String,
     pub to: String,
@@ -715,7 +717,7 @@ impl InitialServerHandshakeMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct InitialClientHandshakeMessage {
     pub from: String,
     pub to: String,
@@ -800,7 +802,7 @@ impl InitialClientHandshakeMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SendFastPositionUpdatesMessage {
     pub from: String,
     pub to: String,
@@ -837,7 +839,7 @@ impl SendFastPositionUpdatesMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VelocityPositionStoppedMessage {
     pub from: String,
     pub latitude: f64,
@@ -935,7 +937,7 @@ impl VelocityPositionStoppedMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VelocityPositionSlowMessage {
     pub from: String,
     pub latitude: f64,
@@ -1081,7 +1083,7 @@ impl VelocityPositionSlowMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct VelocityPositionFastMessage {
     pub from: String,
     pub latitude: f64,
@@ -1250,7 +1252,7 @@ impl VelocityPositionFastMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct KillMessage {
     pub from: String,
     pub to: String,
@@ -1292,7 +1294,7 @@ impl KillMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MetarRequestMessage {
     pub from: String,
     pub to: String,
@@ -1325,7 +1327,7 @@ impl MetarRequestMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MetarResponseMessage {
     pub from: String,
     pub to: String,
@@ -1358,7 +1360,7 @@ impl MetarResponseMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PingMessage {
     pub from: String,
     pub to: String,
@@ -1397,7 +1399,7 @@ impl PingMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PongMessage {
     pub from: String,
     pub to: String,
@@ -1436,7 +1438,7 @@ impl PongMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PlaneInfoRequestMessage {
     pub from: String,
     pub to: String,
@@ -1467,7 +1469,7 @@ impl PlaneInfoRequestMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PlaneInfoResponseMessage {
     pub from: String,
     pub to: String,
@@ -1576,7 +1578,7 @@ impl FsdErrorMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FlightPlanMessage {
     pub to: String,
     pub callsign: String,
@@ -1616,7 +1618,7 @@ impl FlightPlanMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct FlightPlanAmendmentMessage {
     pub from: String,
     pub to: String,
@@ -1668,7 +1670,7 @@ impl FlightPlanAmendmentMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ClientQueryMessage {
     pub from: String,
     pub to: String,
@@ -1742,10 +1744,11 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             )),
             "SC" => {
                 check_min_num_fields!(fields, 5);
+                let scratchpad_contents = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetScratchpad(fields[3].to_uppercase(), fields[4].to_string()),
+                    ClientQueryType::SetScratchpad(fields[3].to_uppercase(), scratchpad_contents),
                 ))
             }
             "FA" => {
@@ -1867,6 +1870,23 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 fields[1],
                 ClientQueryType::INF,
             )),
+            "SIMTIME" => {
+                check_min_num_fields!(fields, 4);
+                let time = match NaiveDateTime::parse_from_str(fields[3], "%Y%m%d%H%M%S") {
+                    Ok(naive_time) => naive_time.and_utc(),
+                    Err(e) => {
+                        return Err(FsdMessageParseError::InvalidTime(format!(
+                            "SIMTIME uses incorrect format: {}, {e}",
+                            fields[3]
+                        )));
+                    }
+                };
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::Simtime(time),
+                ))
+            }
             _ => Err(FsdMessageParseError::UnknownMessageType(
                 fields[2].to_string(),
             )),
@@ -2016,15 +2036,12 @@ impl ClientQueryMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         subject: impl AsRef<str>,
-        scratchpad_contents: impl Into<String>,
+        scratchpad_contents: ScratchPad,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetScratchpad(
-                subject.as_ref().to_uppercase(),
-                scratchpad_contents.into(),
-            ),
+            ClientQueryType::SetScratchpad(subject.as_ref().to_uppercase(), scratchpad_contents),
         )
     }
     pub fn set_voice_type(
@@ -2076,7 +2093,7 @@ impl ClientQueryMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct ClientQueryResponseMessage {
     pub from: String,
     pub to: String,
@@ -2235,7 +2252,7 @@ impl ClientQueryResponseMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct HandoffOfferMessage {
     pub from: String,
     pub to: String,
@@ -2270,7 +2287,7 @@ impl HandoffOfferMessage {
 }
 
 #[non_exhaustive]
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct SharedStateMessage {
     pub from: String,
     pub to: String,
@@ -2304,7 +2321,8 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             ),
             "SC" => {
                 check_min_num_fields!(fields, 6);
-                SharedStateType::ScratchPad(fields[4].to_uppercase(), fields[5].to_string())
+                let scratchpad_contents = fields[5].parse()?;
+                SharedStateType::ScratchPad(fields[4].to_uppercase(), scratchpad_contents)
             }
             "TA" => {
                 check_min_num_fields!(fields, 6);
@@ -2372,15 +2390,12 @@ impl SharedStateMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         subject: impl AsRef<str>,
-        scratchpad_contents: impl Into<String>,
+        scratchpad_contents: ScratchPad,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::ScratchPad(
-                subject.as_ref().to_uppercase(),
-                scratchpad_contents.into(),
-            ),
+            SharedStateType::ScratchPad(subject.as_ref().to_uppercase(), scratchpad_contents),
         )
     }
     pub fn temp_altitude(
@@ -2432,7 +2447,7 @@ impl SharedStateMessage {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct HandoffAcceptMessage {
     pub from: String,
     pub to: String,
