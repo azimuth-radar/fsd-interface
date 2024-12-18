@@ -2,7 +2,7 @@
 //!
 //!
 
-use std::fmt::Display;
+use std::{collections::HashSet, fmt::Display};
 
 use chrono::NaiveDateTime;
 
@@ -2223,7 +2223,7 @@ impl ClientQueryResponseMessage {
     pub fn capabilities(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        capabilities: impl Into<Vec<ClientCapability>>,
+        capabilities: impl Into<HashSet<ClientCapability>>,
     ) -> ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,

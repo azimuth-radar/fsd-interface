@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::{fmt::Display, str::FromStr};
 
 use crate::messages::*;
@@ -5,7 +6,7 @@ use crate::structs::{RadioFrequency, TransponderCode};
 use crate::{aircraft_config::AircraftConfig, errors::FsdMessageParseError};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum ClientCapability {
     Version,
     ATCInfo,
@@ -21,6 +22,8 @@ pub enum ClientCapability {
     InterimPos,
     Stealth,
     Teamspeak,
+    Simulated,
+    ObsPilot,
 }
 impl FromStr for ClientCapability {
     type Err = FsdMessageParseError;
@@ -40,6 +43,8 @@ impl FromStr for ClientCapability {
             "INTERIMPOS" => Ok(ClientCapability::InterimPos),
             "STEALTH" => Ok(ClientCapability::Stealth),
             "TEAMSPEAK" => Ok(ClientCapability::Teamspeak),
+            "SIMULATED" => Ok(ClientCapability::Simulated),
+            "OBSPILOT" => Ok(ClientCapability::ObsPilot),
             _ => Err(FsdMessageParseError::InvalidClientCapability(s.to_string())),
         }
     }
@@ -61,6 +66,8 @@ impl Display for ClientCapability {
             ClientCapability::InterimPos => write!(f, "INTERIMPOS"),
             ClientCapability::Stealth => write!(f, "STEALTH"),
             ClientCapability::Teamspeak => write!(f, "TEAMSPEAK"),
+            ClientCapability::Simulated => write!(f, "SIMULATED"),
+            ClientCapability::ObsPilot => write!(f, "OBSPILOT"),
         }
     }
 }
@@ -628,7 +635,7 @@ pub enum ClientResponseType {
     Com1Freq(RadioFrequency),
     ATIS(AtisLine),
     RealName(String, String, u8),
-    Capabilities(Vec<ClientCapability>),
+    Capabilities(HashSet<ClientCapability>),
     PublicIP(String),
     IsValidATC(String, bool),
 }

@@ -1,5 +1,5 @@
 use crate::{enums::ClientCapability, errors::FsdMessageParseError, structs::RadioFrequency};
-use std::str::FromStr;
+use std::{collections::HashSet, str::FromStr};
 
 pub fn encode_pitch_bank_heading(pitch: f64, bank: f64, heading: f64, on_ground: bool) -> u32 {
     let mut p = pitch / -360.0;
@@ -151,8 +151,8 @@ pub(crate) fn assemble_with_colons(slice: &[&str]) -> String {
     buffer
 }
 
-pub fn read_capabilities(caps_str: &[&str]) -> Vec<ClientCapability> {
-    let mut capabilities: Vec<ClientCapability> = Vec::with_capacity(caps_str.len() / 2);
+pub fn read_capabilities(caps_str: &[&str]) -> HashSet<ClientCapability> {
+    let mut capabilities: HashSet<ClientCapability> = HashSet::with_capacity(caps_str.len() / 2);
     if caps_str.is_empty() {
         return capabilities;
     }
@@ -171,7 +171,7 @@ pub fn read_capabilities(caps_str: &[&str]) -> Vec<ClientCapability> {
 
         if let Ok(capability) = k.to_uppercase().as_str().parse() {
             if v == "1" {
-                capabilities.push(capability);
+                capabilities.insert(capability);
             }
         }
     }
