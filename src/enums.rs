@@ -540,7 +540,7 @@ pub enum ClientQueryType {
     PublicIP,                                       //IP
     INF,                                            //INF
     FlightPlan(String),                             //FP
-    //IPC, //IPC
+    ForceBeaconCode(TransponderCode),
     RequestRelief,                                  //BY
     CancelRequestRelief,                            //HI
     HelpRequest(Option<String>),                                    //HLP
@@ -591,6 +591,9 @@ impl Display for ClientQueryType {
             ClientQueryType::SetTempAltitude(subject, alt) => write!(f, "TA:{}:{}", subject, alt),
             ClientQueryType::SetBeaconCode(subject, code) => {
                 write!(f, "BC:{}:{}", subject, code)
+            }
+            ClientQueryType::ForceBeaconCode(code) => {
+                write!(f, "IPC:W:852:{}", code.as_bcd_format())
             }
             ClientQueryType::SetScratchpad(subject, contents) => {
                 write!(f, "SC:{}:{}", subject, contents)

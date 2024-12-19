@@ -1708,6 +1708,17 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 fields[1],
                 ClientQueryType::RealName,
             )),
+            "IPC" => {
+                //$CQserver:N194Q:IPC:W:852:8704
+                let remainder = fields.get(3..6).ok_or(FsdMessageParseError::InvalidFieldCount(6, 3))?;
+                if remainder[0] != "W" || remainder[1] != "852" {
+                    return Err(FsdMessageParseError::UnknownMessageType(format!("IPC:{}:{}:{}", fields[0], fields[1], fields[2])));
+                }
+                let code = TransponderCode::try_from_bcd_format(remainder[2])?;
+                Ok(
+                    ClientQueryMessage::new(first, fields[1], ClientQueryType::ForceBeaconCode(code))
+                )
+            },
             "SV" => Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::Server)),
             "ACC" => {
                 let data = fields
@@ -1919,6 +1930,9 @@ impl ClientQueryMessage {
             to: to.as_ref().to_uppercase(),
             query_type,
         }
+    }
+    pub fn force_beacon_code(from: impl AsRef<str>, to: impl AsRef<str>, code: TransponderCode) -> ClientQueryMessage {
+        ClientQueryMessage::new(from, to, ClientQueryType::ForceBeaconCode(code))
     }
     pub fn help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
         let message = message.map(|msg| msg.as_ref().to_string());

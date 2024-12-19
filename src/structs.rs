@@ -27,6 +27,21 @@ impl TryFrom<u16> for TransponderCode {
         }
     }
 }
+impl TransponderCode {
+    pub fn try_from_bcd_format(bcd: impl AsRef<str>) -> Result<TransponderCode, FsdMessageParseError> {
+        let bcd = bcd.as_ref();
+        let num = bcd.parse::<u32>().map_err(|_| FsdMessageParseError::InvalidTransponderCode(bcd.to_owned()))?;
+        let hex_value = format!("{:X}", num);
+        let result = hex_value.parse::<u16>().map_err(|_| FsdMessageParseError::InvalidTransponderCode(bcd.to_owned()))?;
+        Self::try_from(result)
+    }
+    pub fn as_bcd_format(&self) -> u32 {
+        let as_dec_str = self.to_string();
+        let as_hex = u32::from_str_radix(&as_dec_str, 16).unwrap();
+        as_hex
+    }
+}
+
 impl FromStr for TransponderCode {
     type Err = FsdMessageParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
