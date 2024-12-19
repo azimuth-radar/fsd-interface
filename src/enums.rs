@@ -531,32 +531,32 @@ impl Display for FsdMessageType {
 #[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum ClientQueryType {
-    IsValidATC(String), //ATC
-    Capabilities,       //CAPS
-    Com1Freq,           //C?
-    RealName,           //RN
-    //Server, //SV
-    ATIS,               //ATIS
-    PublicIP,           //IP
-    INF,                //INF
-    FlightPlan(String), //FP
+    IsValidATC(String),                             //ATC
+    Capabilities,                                   //CAPS
+    Com1Freq,                                       //C?
+    RealName,                                       //RN
+    Server,                                         //SV
+    ATIS,                                           //ATIS
+    PublicIP,                                       //IP
+    INF,                                            //INF
+    FlightPlan(String),                             //FP
     //IPC, //IPC
-    RequestRelief,       //BY
-    CancelRequestRelief, //HI
-    //RequestHelp, //HLP
-    //CancelRequestHelp, //NOHLP
-    WhoHas(String),                                //WH
-    InitiateTrack(String),                         //IT
-    AcceptHandoff(String, String),                 //HT
-    DropTrack(String),                             //DR
-    SetFinalAltitude(String, u32),                 //FA
-    SetTempAltitude(String, u32),                  //TA
-    SetBeaconCode(String, TransponderCode),        //BC
-    SetScratchpad(String, ScratchPad),             //SC
-    SetVoiceType(String, VoiceCapability),         //VT
-    AircraftConfigurationRequest,                  //ACC
-    AircraftConfigurationResponse(AircraftConfig), //ACC
-    Simtime(DateTime<Utc>),                        // SIMTIME
+    RequestRelief,                                  //BY
+    CancelRequestRelief,                            //HI
+    HelpRequest(Option<String>),                                    //HLP
+    CancelHelpRequest(Option<String>),                              //NOHLP
+    WhoHas(String),                                 //WH
+    InitiateTrack(String),                          //IT
+    AcceptHandoff(String, String),                  //HT
+    DropTrack(String),                              //DR
+    SetFinalAltitude(String, u32),                  //FA
+    SetTempAltitude(String, u32),                   //TA
+    SetBeaconCode(String, TransponderCode),         //BC
+    SetScratchpad(String, ScratchPad),              //SC
+    SetVoiceType(String, VoiceCapability),          //VT
+    AircraftConfigurationRequest,                   //ACC
+    AircraftConfigurationResponse(AircraftConfig),  //ACC
+    Simtime(DateTime<Utc>),                         // SIMTIME
     //NewInfo, //NEWINFO
     NewATIS(char, String, String), //NEWATIS
                                    //Estimate, //EST
@@ -570,12 +570,17 @@ impl Display for ClientQueryType {
             ClientQueryType::Capabilities => write!(f, "CAPS"),
             ClientQueryType::Com1Freq => write!(f, "C?"),
             ClientQueryType::RealName => write!(f, "RN"),
+            ClientQueryType::Server => write!(f, "SV"),
             ClientQueryType::ATIS => write!(f, "ATIS"),
             ClientQueryType::PublicIP => write!(f, "IP"),
             ClientQueryType::INF => write!(f, "INF"),
             ClientQueryType::FlightPlan(subject) => write!(f, "FP:{}", subject),
             ClientQueryType::RequestRelief => write!(f, "BY"),
             ClientQueryType::CancelRequestRelief => write!(f, "HI"),
+            ClientQueryType::HelpRequest(None) => write!(f, "HLP"),
+            ClientQueryType::HelpRequest(Some(msg)) => write!(f, "HLP:{msg}"),
+            ClientQueryType::CancelHelpRequest(None) => write!(f, "NOHLP"),
+            ClientQueryType::CancelHelpRequest(Some(msg)) => write!(f, "NOHLP:{msg}"),
             ClientQueryType::WhoHas(subject) => write!(f, "WH:{}", subject),
             ClientQueryType::InitiateTrack(subject) => write!(f, "IT:{}", subject),
             ClientQueryType::AcceptHandoff(subject_ac, subject_atc) => {
@@ -637,6 +642,7 @@ pub enum ClientResponseType {
     RealName(String, String, u8),
     Capabilities(HashSet<ClientCapability>),
     PublicIP(String),
+    Server(String),
     IsValidATC(String, bool),
 }
 impl Display for ClientResponseType {
@@ -661,6 +667,7 @@ impl Display for ClientResponseType {
                 Ok(())
             }
             ClientResponseType::PublicIP(ip) => write!(f, "IP:{}", ip),
+            ClientResponseType::Server(server) => write!(f, "SV:{}", server),
             ClientResponseType::IsValidATC(subject, valid) => {
                 let valid = if *valid { 'Y' } else { 'N' };
                 write!(f, "ATC:{}:{}", valid, subject)

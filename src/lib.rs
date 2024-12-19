@@ -63,8 +63,8 @@
 //!     }
 //! 
 //!     // Plus, on the flip side, we can create our own messages and serialise them
-//!     let new_message = messages::ClientQuery::message::who_has("LIRF_TWR", "@94835", "ITA1561");
-//!     assert_eq!(String::from("$CQLIRF_TWR:@94835:WH:ITA1561"), new_message.to_string());
+//!     let new_message = messages::ClientQuery::message::who_has("LIRF_TWR", "@94835", "ITY1561");
+//!     assert_eq!(String::from("$CQLIRF_TWR:@94835:WH:ITY1561"), new_message.to_string());
 //! }
 //! ```
 //! 
@@ -89,6 +89,8 @@ pub mod errors;
 pub mod messages;
 mod structs;
 mod util;
+
+use std::{fs::File, io::{BufRead, BufReader, Write}, net::TcpStream};
 
 pub use enums::*;
 pub use structs::*;
@@ -117,7 +119,35 @@ pub fn parse_message(message: impl AsRef<str>) -> Result<FsdMessageType, errors:
 
 
 
+#[test]
+fn test_with_es_proxy() {
+    
 
+    let mut connection = TcpStream::connect("127.0.0.1:6810").unwrap();
+    connection.write(b"VATSIM\r\n").unwrap();
+    let reader = BufReader::new(connection);
+
+    for line in reader.lines() {
+        let line = line.unwrap();
+        match crate::parse_message(&line) {
+            Ok(m_type) => {},
+            Err(e) => println!("\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ERROR!!!\n{e}\n"),
+        }
+    }
+}
+
+#[test]
+fn test_sample_input() {
+    let file = BufReader::new(File::open("sample_input.txt").unwrap());
+    for line in file.lines() {
+        let line = line.unwrap();
+        let parsed = crate::parse_message(&line);
+        println!("{line}");
+        println!("{:?}", parsed);
+        println!();
+        //std::io::stdin().read_line(&mut String::new()).ok();
+    }
+}
 
 
 

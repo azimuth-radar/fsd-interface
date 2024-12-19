@@ -42,7 +42,7 @@ impl Display for TransponderCode {
     }
 }
 
-/// Represents a VHF, airband radio frequenxy from 118.000 MHz to 137.000 MHz.
+/// Represents a VHF, airband radio frequency from 118.000 MHz to 137.000 MHz.
 ///
 /// Stored internally as the left part and the right part. For example, 118.3MHz is `RadioFrequency(118, 300)`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

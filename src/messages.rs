@@ -1708,6 +1708,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 fields[1],
                 ClientQueryType::RealName,
             )),
+            "SV" => Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::Server)),
             "ACC" => {
                 let data = fields
                     .get(3)
@@ -1742,6 +1743,24 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 fields[1],
                 ClientQueryType::RequestRelief,
             )),
+            "HLP" => {
+                let mut message = fields.get(3).map(|s| s.to_string());
+                if let Some(ref msg) = message {
+                    if msg.is_empty() {
+                        message = None;
+                    }
+                }
+                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::HelpRequest(message)))
+            },
+            "NOHLP" => {
+                let mut message = fields.get(3).map(|s| s.to_string());
+                if let Some(ref msg) = message {
+                    if msg.is_empty() {
+                        message = None;
+                    }
+                }
+                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::CancelHelpRequest(message)))
+            },
             "SC" => {
                 check_min_num_fields!(fields, 5);
                 let scratchpad_contents = fields[4].parse()?;
@@ -1901,6 +1920,15 @@ impl ClientQueryMessage {
             query_type,
         }
     }
+    pub fn help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
+        let message = message.map(|msg| msg.as_ref().to_string());
+        ClientQueryMessage::new(from, to, ClientQueryType::HelpRequest(message))
+    }
+
+    pub fn cancel_help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
+        let message = message.map(|msg| msg.as_ref().to_string());
+        ClientQueryMessage::new(from, to, ClientQueryType::CancelHelpRequest(message))
+    }
 
     pub fn com_1_freq(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
         ClientQueryMessage::new(from, to, ClientQueryType::Com1Freq)
@@ -1913,6 +1941,9 @@ impl ClientQueryMessage {
     }
     pub fn real_name(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
         ClientQueryMessage::new(from, to, ClientQueryType::RealName)
+    }
+    pub fn server(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
+        ClientQueryMessage::new(from, to, ClientQueryType::Server)
     }
     pub fn capabilities(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
         ClientQueryMessage::new(from, to, ClientQueryType::Capabilities)
@@ -2151,6 +2182,12 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                 ClientResponseType::RealName(name, info, rating)
             }
             "IP" => ClientResponseType::PublicIP(
+                fields
+                    .get(3)
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(4, fields.len()))?
+                    .to_string(),
+            ),
+            "SV" => ClientResponseType::Server(
                 fields
                     .get(3)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(4, fields.len()))?
