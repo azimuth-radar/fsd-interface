@@ -1817,9 +1817,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             }
             "ATC" => {
                 let subject = fields
-                    .get(3)
-                    .ok_or(FsdMessageParseError::InvalidFieldCount(4, 3))?
-                    .to_uppercase();
+                    .get(3).unwrap_or(&first).to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
@@ -2254,7 +2252,7 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                     .to_string(),
             ),
             "ATC" => {
-                check_min_num_fields!(fields, 5);
+                check_min_num_fields!(fields, 4);
                 let is_valid = match fields[3].to_uppercase().as_str() {
                     "Y" => true,
                     "N" => false,
@@ -2264,7 +2262,7 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                         ))
                     }
                 };
-                let subject = fields[4].to_string();
+                let subject = fields.get(4).unwrap_or(&fields[1]).to_uppercase();
                 ClientResponseType::IsValidATC(subject, is_valid)
             }
             "CAPS" => {
