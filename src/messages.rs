@@ -1996,12 +1996,12 @@ impl ClientQueryMessage {
     pub fn is_valid_atc(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        atc_callsign: impl AsRef<str>,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::IsValidATC { atc_callsign: subject.as_ref().to_uppercase() },
+            ClientQueryType::IsValidATC { atc_callsign: atc_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn client_information(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
