@@ -2445,6 +2445,27 @@ impl TryFrom<&[&str]> for SharedStateMessage {
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
             ),
+            "PT" => SharedStateType::PointOut(
+                fields
+                    .get(4)
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
+                    .to_uppercase(),
+            ),
+            "DP" => SharedStateType::PushToDepartureList(
+                fields
+                    .get(4)
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
+                    .to_uppercase(),
+            ),
+            "ST" => {
+                let subject = fields
+                    .get(4)
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
+                    .to_uppercase();
+                let index = fields.get(5).and_then(|i| i.parse::<i32>().ok());
+                let contents = fields.get(6..).map(|c| c.iter().map(|e| e.to_string()).collect::<Vec<_>>());
+                SharedStateType::FlightStrip(subject, index, contents)
+            }
             _ => {
                 return Err(FsdMessageParseError::InvalidSharedStateType(
                     fields[3].to_string(),
@@ -2538,6 +2559,41 @@ impl SharedStateMessage {
             from,
             to,
             SharedStateType::HandoffCancel(subject.as_ref().to_uppercase()),
+        )
+    }
+    pub fn point_out(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        subject: impl AsRef<str>,
+    ) -> SharedStateMessage {
+        SharedStateMessage::new(
+            from,
+            to,
+            SharedStateType::PointOut(subject.as_ref().to_uppercase()),
+        )
+    }
+    pub fn push_to_departure_list(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        subject: impl AsRef<str>,
+    ) -> SharedStateMessage {
+        SharedStateMessage::new(
+            from,
+            to,
+            SharedStateType::PushToDepartureList(subject.as_ref().to_uppercase()),
+        )
+    }
+    pub fn flight_strip(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        subject: impl AsRef<str>,
+        format: Option<i32>,
+        contents: Option<Vec<String>>,
+    ) -> SharedStateMessage {
+        SharedStateMessage::new(
+            from,
+            to,
+            SharedStateType::FlightStrip(subject.as_ref().to_uppercase(), format, contents),
         )
     }
 }

@@ -714,6 +714,9 @@ pub enum SharedStateType {
     VoiceType(String, VoiceCapability),
     BeaconCode(String, TransponderCode),
     HandoffCancel(String),
+    FlightStrip(String, Option<i32>, Option<Vec<String>>),
+    PushToDepartureList(String),
+    PointOut(String),
 }
 
 impl Display for SharedStateType {
@@ -737,6 +740,20 @@ impl Display for SharedStateType {
             }
             SharedStateType::BeaconCode(subject, code) => write!(f, "BC:{}:{}", subject, code),
             SharedStateType::HandoffCancel(subject) => write!(f, "HC:{}", subject),
+            SharedStateType::PointOut(subject) => write!(f, "PT:{}", subject),
+            SharedStateType::PushToDepartureList(subject) => write!(f, "DP:{}", subject),
+            SharedStateType::FlightStrip(callsign, format, contents) => {
+                write!(f, "ST:{callsign}")?;
+                if let Some(format) = *format {
+                    write!(f, ":{format}")?;
+                }
+                if let Some(contents) = contents {
+                    for item in contents {
+                        write!(f, ":{item}")?;
+                    }
+                }
+                Ok(())
+            }
         }
     }
 }
