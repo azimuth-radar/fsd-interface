@@ -540,11 +540,11 @@ pub enum ClientQueryType {
     PublicIP,                                       //IP
     INF,                                            //INF
     FlightPlan(String),                             //FP
-    ForceBeaconCode(TransponderCode),
+    ForceBeaconCode(TransponderCode),               //IPC:W:852
     RequestRelief,                                  //BY
     CancelRequestRelief,                            //HI
-    HelpRequest(Option<String>),                                    //HLP
-    CancelHelpRequest(Option<String>),                              //NOHLP
+    HelpRequest(Option<String>),                    //HLP
+    CancelHelpRequest(Option<String>),              //NOHLP
     WhoHas(String),                                 //WH
     InitiateTrack(String),                          //IT
     AcceptHandoff(String, String),                  //HT
@@ -556,11 +556,11 @@ pub enum ClientQueryType {
     SetVoiceType(String, VoiceCapability),          //VT
     AircraftConfigurationRequest,                   //ACC
     AircraftConfigurationResponse(AircraftConfig),  //ACC
-    Simtime(DateTime<Utc>),                         // SIMTIME
-    //NewInfo, //NEWINFO
-    NewATIS(char, String, String), //NEWATIS
-                                   //Estimate, //EST
-                                   //SetGlobalData, //GD
+    Simtime(DateTime<Utc>),                         //SIMTIME
+    //NewInfo,                                      //NEWINFO
+    NewATIS(char, String, String),                  //NEWATIS
+                                                    //Estimate, //EST
+                                                    //SetGlobalData, //GD
 }
 
 impl Display for ClientQueryType {

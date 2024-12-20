@@ -8,14 +8,14 @@
 //! The FSD (Flight Simulator Daemon) protocol is used for communication between pilot / ATC
 //! client software and FSD servers via a TCP connection. It has existed since the 90s and
 //! is still in wide use today.
-//! 
+//! /
 //! The earliest version of an FSD server available online is [this one here](https://github.com/kuroneko/fsd),
 //! written by Marty Bochane. It is open source and some people compile and run an instance of
 //! this software privately - often virtual flying groups.
 //! 
 //! [VATSIM](https://www.vatsim.net/) and [IVAO](https://www.ivao.aero/) also use the FSD protocol, however they have each diverged significantly from the version of
 //! the protocol used in Marty Bochane's server, in such a way that all three of these 'dialects' are
-//! incompatible with each other. That said, there are some clients, namely [EuroScope](https://www.euroscope.hu/wp/) and [Swift](https://docs.swift-project.org/doku.php?id=start)
+//! incompatible with each other. That said, there are some clients, namely [EuroScope](https://www.euroscope.hu/) and [Swift](https://docs.swift-project.org/doku.php?id=start)
 //! which implement both the legacy FSD protocol and the modern VATSIM version, and as such are able to connect both to VATSIM
 //! and to private FSD servers.
 //! 
