@@ -90,7 +90,6 @@ pub mod messages;
 mod structs;
 mod util;
 
-use std::{fs::File, io::{BufRead, BufReader, Write}, net::TcpStream};
 
 pub use enums::*;
 pub use structs::*;
@@ -105,3 +104,4 @@ pub use aircraft_config::*;
 pub fn parse_message(message: impl AsRef<str>) -> Result<FsdMessageType, errors::FsdMessageParseError> {
     FsdMessageType::identify(message.as_ref())
 }
+

@@ -148,7 +148,7 @@ impl TryFrom<&[&str]> for PilotRegisterMessage {
             fields[3],
             fields[4].parse()?,
             fields[5].parse()?,
-            fields[6].parse()?,
+            fields[6].into(),
         ))
     }
 }
@@ -180,21 +180,32 @@ impl PilotRegisterMessage {
 #[derive(Clone, Debug)]
 pub struct AtcDeregisterMessage {
     pub from: String,
-    pub cid: String,
+    pub cid: Option<String>,
 }
 
 impl Display for AtcDeregisterMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "#DA{}:{}", self.from, self.cid)
+        if let Some(cid) = &self.cid {
+            write!(f, "#DA{}:{}", self.from, cid)
+        }
+        else {
+            write!(f, "#DA{}", self.from)
+        }
     }
 }
 
 impl TryFrom<&[&str]> for AtcDeregisterMessage {
     type Error = FsdMessageParseError;
     fn try_from(fields: &[&str]) -> Result<Self, Self::Error> {
-        check_min_num_fields!(fields, 2);
+        check_min_num_fields!(fields, 1);
         let first = &fields[0][3..];
-        Ok(AtcDeregisterMessage::new(first, fields[1]))
+        let cid = fields.get(1).map(|s| s.to_string());
+        Ok(
+            AtcDeregisterMessage {
+                from: first.to_uppercase(),
+                cid
+            }
+        )
     }
 }
 
@@ -202,7 +213,7 @@ impl AtcDeregisterMessage {
     pub fn new(from: impl AsRef<str>, cid: impl Into<String>) -> Self {
         AtcDeregisterMessage {
             from: from.as_ref().to_uppercase(),
-            cid: cid.into(),
+            cid: Some(cid.into()),
         }
     }
 }
@@ -211,21 +222,32 @@ impl AtcDeregisterMessage {
 #[derive(Clone, Debug)]
 pub struct PilotDeregisterMessage {
     pub from: String,
-    pub cid: String,
+    pub cid: Option<String>,
 }
 
 impl Display for PilotDeregisterMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "#DP{}:{}", self.from, self.cid)
+        if let Some(cid) = &self.cid {
+            write!(f, "#DP{}:{}", self.from, cid)
+        }
+        else {
+            write!(f, "#DP{}", self.from)
+        }
     }
 }
 
 impl TryFrom<&[&str]> for PilotDeregisterMessage {
     type Error = FsdMessageParseError;
     fn try_from(fields: &[&str]) -> Result<Self, Self::Error> {
-        check_min_num_fields!(fields, 2);
+        check_min_num_fields!(fields, 1);
         let first = &fields[0][3..];
-        Ok(PilotDeregisterMessage::new(first, fields[1]))
+        let cid = fields.get(1).map(|s| s.to_string());
+        Ok(
+            PilotDeregisterMessage {
+                from: first.to_uppercase(),
+                cid
+            }
+        )
     }
 }
 
@@ -233,7 +255,7 @@ impl PilotDeregisterMessage {
     pub fn new(from: impl AsRef<str>, cid: impl Into<String>) -> Self {
         PilotDeregisterMessage {
             from: from.as_ref().to_uppercase(),
-            cid: cid.into(),
+            cid: Some(cid.into()),
         }
     }
 }
@@ -1824,6 +1846,23 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                     ClientQueryType::NewATIS(letter, wind, pressure),
                 ))
             }
+            // $CQLFMD_ATIS:@94835:NEWINFO:O
+            "NEWINFO" => {
+                check_min_num_fields!(fields, 4);
+                let letter = fields[3].chars().last().and_then(|c| {
+                    let c = c.to_ascii_uppercase();
+                    if (c as u8) < 65 || (c as u8) > 90 {
+                        None
+                    } else {
+                        Some(c)
+                    }
+                }).ok_or_else(|| FsdMessageParseError::InvalidATISLine(fields.join(":")))?;
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::NewInfo(letter),
+                ))
+            }
             "VT" => {
                 check_min_num_fields!(fields, 5);
                 Ok(ClientQueryMessage::new(
@@ -2110,6 +2149,19 @@ impl ClientQueryMessage {
             from,
             to,
             ClientQueryType::AircraftConfigurationResponse(aircraft_config),
+        )
+    }
+    pub fn new_info(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        atis_letter: char,
+    ) -> ClientQueryMessage {
+        ClientQueryMessage::new(
+            from,
+            to,
+            ClientQueryType::NewInfo(
+                atis_letter
+            ),
         )
     }
     pub fn new_atis(

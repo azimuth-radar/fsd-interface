@@ -160,10 +160,11 @@ impl FromStr for ProtocolRevision {
     }
 }
 
-///
+
 #[derive(Debug, Clone, Copy)]
 pub enum SimulatorType {
-    MSFS95 = 1,
+    Unknown,
+    MSFS95,
     MSFS98,
     MSCFS,
     MSFS2000,
@@ -172,34 +173,46 @@ pub enum SimulatorType {
     MSCFS3,
     MSFS2004,
     MSFSX,
-    XPlane8 = 12,
-    XPlane9,
-    XPlane10,
-    XPlane11 = 16,
-    FlightGear = 25,
-    P3D = 30,
+    MSFS,
+    MSFS2024,
+    XPLANE8,
+    XPLANE9,
+    XPLANE10,
+    XPLANE11,
+    XPLANE12,
+    P3Dv1,
+    P3Dv2,
+    P3Dv3,
+    P3Dv4,
+    P3Dv5,
+    FlightGear
 }
-
-impl FromStr for SimulatorType {
-    type Err = FsdMessageParseError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "1" => Ok(SimulatorType::MSFS95),
-            "2" => Ok(SimulatorType::MSFS98),
-            "3" => Ok(SimulatorType::MSCFS),
-            "4" => Ok(SimulatorType::MSFS2000),
-            "5" => Ok(SimulatorType::MSCFS2),
-            "6" => Ok(SimulatorType::MSFS2002),
-            "7" => Ok(SimulatorType::MSCFS3),
-            "8" => Ok(SimulatorType::MSFS2004),
-            "9" => Ok(SimulatorType::MSFSX),
-            "12" => Ok(SimulatorType::XPlane8),
-            "13" => Ok(SimulatorType::XPlane9),
-            "14" => Ok(SimulatorType::XPlane10),
-            "16" => Ok(SimulatorType::XPlane11),
-            "25" => Ok(SimulatorType::FlightGear),
-            "30" => Ok(SimulatorType::P3D),
-            _ => Err(FsdMessageParseError::InvalidSimulatorType(s.to_string())),
+impl<S: AsRef<str>> From<S> for SimulatorType {
+    fn from(value: S) -> Self {
+        match value.as_ref() {
+            "1" => SimulatorType::MSFS95,
+            "2" => SimulatorType::MSFS98,
+            "3" => SimulatorType::MSCFS,
+            "4" => SimulatorType::MSFS2000,
+            "5" => SimulatorType::MSCFS2,
+            "6" => SimulatorType::MSFS2002,
+            "7" => SimulatorType::MSCFS3,
+            "8" => SimulatorType::MSFS2004,
+            "9" => SimulatorType::MSFSX,
+            "10" => SimulatorType::MSFS,
+            "11" => SimulatorType::MSFS2024,
+            "12" => SimulatorType::XPLANE8,
+            "13" => SimulatorType::XPLANE9,
+            "14" => SimulatorType::XPLANE10,
+            "15" => SimulatorType::XPLANE11,
+            "16" => SimulatorType::XPLANE12,
+            "17" => SimulatorType::P3Dv1,
+            "18" => SimulatorType::P3Dv2,
+            "19" => SimulatorType::P3Dv3,
+            "20" => SimulatorType::P3Dv4,
+            "21" => SimulatorType::P3Dv5,
+            "22" => SimulatorType::FlightGear,
+            _ => SimulatorType::Unknown,
         }
     }
 }
@@ -335,16 +348,15 @@ impl FsdMessageType {
     pub(crate) fn identify(message: &str) -> Result<FsdMessageType, FsdMessageParseError> {
         let fields: Vec<&str> = message.split(':').collect();
         if fields.len() < 2 {
+            if fields[0].starts_with("#DA") {
+                return Ok(Self::AtcDeregisterMessage(fields.as_slice().try_into()?));
+            }
+            if fields[0].starts_with("#DP") {
+                return Ok(Self::PilotDeregisterMessage(fields.as_slice().try_into()?));
+            }
             return Err(FsdMessageParseError::UnknownMessageType(
                 message.to_string(),
             ));
-        }
-
-        if fields[0].starts_with("#AA") {
-            return Ok(Self::AtcRegisterMessage(fields.as_slice().try_into()?));
-        }
-        if fields[0].starts_with("#AP") {
-            return Ok(Self::PilotRegisterMessage(fields.as_slice().try_into()?));
         }
         if fields[0].starts_with("#DA") {
             return Ok(Self::AtcDeregisterMessage(fields.as_slice().try_into()?));
@@ -352,6 +364,13 @@ impl FsdMessageType {
         if fields[0].starts_with("#DP") {
             return Ok(Self::PilotDeregisterMessage(fields.as_slice().try_into()?));
         }
+        if fields[0].starts_with("#AA") {
+            return Ok(Self::AtcRegisterMessage(fields.as_slice().try_into()?));
+        }
+        if fields[0].starts_with("#AP") {
+            return Ok(Self::PilotRegisterMessage(fields.as_slice().try_into()?));
+        }
+        
         if fields[0].starts_with('%') {
             return Ok(Self::AtcPositionUpdateMessage(
                 fields.as_slice().try_into()?,
@@ -557,7 +576,7 @@ pub enum ClientQueryType {
     AircraftConfigurationRequest,                   //ACC
     AircraftConfigurationResponse(AircraftConfig),  //ACC
     Simtime(DateTime<Utc>),                         //SIMTIME
-    //NewInfo,                                      //NEWINFO
+    NewInfo(char),                                  //NEWINFO
     NewATIS(char, String, String),                  //NEWATIS
                                                     //Estimate, //EST
                                                     //SetGlobalData, //GD
@@ -609,6 +628,9 @@ impl Display for ClientQueryType {
             }
             ClientQueryType::NewATIS(letter, wind, pressure) => {
                 write!(f, "NEWATIS:ATIS {}:  {} - {}", letter, wind, pressure)
+            }
+            ClientQueryType::NewInfo(letter) => {
+                write!(f, "NEWINFO:{}", letter)
             }
             ClientQueryType::Simtime(time) => {
                 write!(f, "SIMTIME:{}", time.format("Y%m%d%H%M%S"))
