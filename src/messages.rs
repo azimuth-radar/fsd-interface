@@ -1732,7 +1732,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 }
                 let code = TransponderCode::try_from_bcd_format(remainder[2])?;
                 Ok(
-                    ClientQueryMessage::new(first, fields[1], ClientQueryType::ForceBeaconCode(code))
+                    ClientQueryMessage::new(first, fields[1], ClientQueryType::ForceBeaconCode { code })
                 )
             },
             "SV" => Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::Server)),
@@ -1761,7 +1761,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                     Ok(ClientQueryMessage::new(
                         first,
                         fields[1],
-                        ClientQueryType::AircraftConfigurationResponse(data.as_str().parse()?),
+                        ClientQueryType::AircraftConfigurationResponse { aircraft_config: data.as_str().parse()? },
                     ))
                 }
             }
@@ -1777,7 +1777,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                         message = None;
                     }
                 }
-                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::HelpRequest(message)))
+                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::HelpRequest { message }))
             },
             "NOHLP" => {
                 let mut message = fields.get(3).map(|s| s.to_string());
@@ -1786,15 +1786,15 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                         message = None;
                     }
                 }
-                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::CancelHelpRequest(message)))
+                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::CancelHelpRequest { message }))
             },
             "SC" => {
                 check_min_num_fields!(fields, 5);
-                let scratchpad_contents = fields[4].parse()?;
+                let contents = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetScratchpad(fields[3].to_uppercase(), scratchpad_contents),
+                    ClientQueryType::SetScratchpad { aircraft_callsign: fields[3].to_uppercase(), contents },
                 ))
             }
             "FA" => {
@@ -1803,51 +1803,51 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetFinalAltitude(fields[3].to_uppercase(), altitude),
+                    ClientQueryType::SetFinalAltitude{ aircraft_callsign: fields[3].to_uppercase(), altitude },
                 ))
             }
             "BC" => {
                 check_min_num_fields!(fields, 5);
-                let squawk = fields[4].parse()?;
+                let code = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetBeaconCode(fields[3].to_uppercase(), squawk),
+                    ClientQueryType::SetBeaconCode { aircraft_callsign: fields[3].to_uppercase(), code },
                 ))
             }
             "ATC" => {
-                let subject = fields
+                let atc_callsign = fields
                     .get(3).unwrap_or(&first).to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::IsValidATC(subject),
+                    ClientQueryType::IsValidATC { atc_callsign },
                 ))
             }
             "FP" => {
-                let subject = fields
+                let aircraft_callsign = fields
                     .get(3)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(4, 3))?
                     .to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::FlightPlan(subject),
+                    ClientQueryType::FlightPlan { aircraft_callsign },
                 ))
             }
             "NEWATIS" => {
                 check_min_num_fields!(fields, 5);
-                let (letter, wind, pressure) = util::parse_new_atis(&fields[3..])?;
+                let (atis_letter, surface_wind, pressure) = util::parse_new_atis(&fields[3..])?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::NewATIS(letter, wind, pressure),
+                    ClientQueryType::NewATIS { atis_letter, surface_wind, pressure },
                 ))
             }
             // $CQLFMD_ATIS:@94835:NEWINFO:O
             "NEWINFO" => {
                 check_min_num_fields!(fields, 4);
-                let letter = fields[3].chars().last().and_then(|c| {
+                let atis_letter = fields[3].chars().last().and_then(|c| {
                     let c = c.to_ascii_uppercase();
                     if (c as u8) < 65 || (c as u8) > 90 {
                         None
@@ -1858,7 +1858,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::NewInfo(letter),
+                    ClientQueryType::NewInfo { atis_letter },
                 ))
             }
             "VT" => {
@@ -1866,45 +1866,45 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetVoiceType(fields[3].to_uppercase(), fields[4].parse()?),
+                    ClientQueryType::SetVoiceType { aircraft_callsign: fields[3].to_uppercase(), voice_capability: fields[4].parse()? },
                 ))
             }
             "WH" => {
                 check_min_num_fields!(fields, 4);
-                let subject = fields[3].to_uppercase();
+                let aircraft_callsign = fields[3].to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::WhoHas(subject),
+                    ClientQueryType::WhoHas { aircraft_callsign },
                 ))
             }
             "TA" => {
                 check_min_num_fields!(fields, 5);
-                let subject = fields[3].to_uppercase();
+                let aircraft_callsign = fields[3].to_uppercase();
                 let altitude = util::parse_altitude(fields[4])?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetTempAltitude(subject, altitude),
+                    ClientQueryType::SetTempAltitude { aircraft_callsign, altitude },
                 ))
             }
             "HT" => {
                 check_min_num_fields!(fields, 5);
-                let subject_aircraft = fields[3].to_uppercase();
-                let subject_atc = fields[4].to_uppercase();
+                let aircraft_callsign = fields[3].to_uppercase();
+                let atc_callsign = fields[4].to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::AcceptHandoff(subject_aircraft, subject_atc),
+                    ClientQueryType::AcceptHandoff { aircraft_callsign, atc_callsign },
                 ))
             }
             "DR" => {
                 check_min_num_fields!(fields, 4);
-                let subject = fields[3].to_uppercase();
+                let aircraft_callsign = fields[3].to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::DropTrack(subject),
+                    ClientQueryType::DropTrack { aircraft_callsign },
                 ))
             }
             "CAPS" => Ok(ClientQueryMessage::new(
@@ -1914,11 +1914,11 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             )),
             "IT" => {
                 check_min_num_fields!(fields, 4);
-                let subject = fields[3].to_uppercase();
+                let aircraft_callsign = fields[3].to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::InitiateTrack(subject),
+                    ClientQueryType::InitiateTrack { aircraft_callsign },
                 ))
             }
             "HI" => Ok(ClientQueryMessage::new(
@@ -1945,7 +1945,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::Simtime(time),
+                    ClientQueryType::SimTime { time },
                 ))
             }
             _ => Err(FsdMessageParseError::UnknownMessageType(
@@ -1963,16 +1963,16 @@ impl ClientQueryMessage {
         }
     }
     pub fn force_beacon_code(from: impl AsRef<str>, to: impl AsRef<str>, code: TransponderCode) -> ClientQueryMessage {
-        ClientQueryMessage::new(from, to, ClientQueryType::ForceBeaconCode(code))
+        ClientQueryMessage::new(from, to, ClientQueryType::ForceBeaconCode { code })
     }
     pub fn help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
         let message = message.map(|msg| msg.as_ref().to_string());
-        ClientQueryMessage::new(from, to, ClientQueryType::HelpRequest(message))
+        ClientQueryMessage::new(from, to, ClientQueryType::HelpRequest { message })
     }
 
     pub fn cancel_help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
         let message = message.map(|msg| msg.as_ref().to_string());
-        ClientQueryMessage::new(from, to, ClientQueryType::CancelHelpRequest(message))
+        ClientQueryMessage::new(from, to, ClientQueryType::CancelHelpRequest { message })
     }
 
     pub fn com_1_freq(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
@@ -2001,7 +2001,7 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::IsValidATC(subject.as_ref().to_uppercase()),
+            ClientQueryType::IsValidATC { atc_callsign: subject.as_ref().to_uppercase() },
         )
     }
     pub fn client_information(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
@@ -2010,12 +2010,12 @@ impl ClientQueryMessage {
     pub fn flight_plan(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::FlightPlan(subject.as_ref().to_uppercase()),
+            ClientQueryType::FlightPlan { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn request_relief(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
@@ -2027,109 +2027,109 @@ impl ClientQueryMessage {
     pub fn who_has(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::WhoHas(subject.as_ref().to_uppercase()),
+            ClientQueryType::WhoHas { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn initiate_track(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::InitiateTrack(subject.as_ref().to_uppercase()),
+            ClientQueryType::InitiateTrack { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn accept_handoff(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject_aircraft: impl AsRef<str>,
-        subject_atc: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
+        atc_callsign: impl AsRef<str>,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::AcceptHandoff(
-                subject_aircraft.as_ref().to_uppercase(),
-                subject_atc.as_ref().to_uppercase(),
-            ),
+            ClientQueryType::AcceptHandoff {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                atc_callsign: atc_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn drop_track(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::DropTrack(subject.as_ref().to_uppercase()),
+            ClientQueryType::DropTrack { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn set_final_altitude(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
         altitude: u32,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetFinalAltitude(subject.as_ref().to_uppercase(), altitude),
+            ClientQueryType::SetFinalAltitude { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), altitude },
         )
     }
     pub fn set_temp_altitude(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
         altitude: u32,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetTempAltitude(subject.as_ref().to_uppercase(), altitude),
+            ClientQueryType::SetTempAltitude { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), altitude },
         )
     }
     pub fn set_beacon_code(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
         code: TransponderCode,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetBeaconCode(subject.as_ref().to_uppercase(), code),
+            ClientQueryType::SetBeaconCode { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), code },
         )
     }
     pub fn set_scratchpad(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
-        scratchpad_contents: ScratchPad,
+        aircraft_callsign: impl AsRef<str>,
+        contents: ScratchPad,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetScratchpad(subject.as_ref().to_uppercase(), scratchpad_contents),
+            ClientQueryType::SetScratchpad { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents },
         )
     }
     pub fn set_voice_type(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
-        voice_type: VoiceCapability,
+        aircraft_callsign: impl AsRef<str>,
+        voice_capability: VoiceCapability,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetVoiceType(subject.as_ref().to_uppercase(), voice_type),
+            ClientQueryType::SetVoiceType { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), voice_capability },
         )
     }
     pub fn aircraft_config_request(
@@ -2146,7 +2146,7 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::AircraftConfigurationResponse(aircraft_config),
+            ClientQueryType::AircraftConfigurationResponse { aircraft_config },
         )
     }
     pub fn new_info(
@@ -2157,9 +2157,9 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::NewInfo(
+            ClientQueryType::NewInfo {
                 atis_letter
-            ),
+            },
         )
     }
     pub fn new_atis(
@@ -2172,11 +2172,11 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::NewATIS(
+            ClientQueryType::NewATIS {
                 atis_letter,
-                wind_dir_and_speed.as_ref().to_uppercase(),
-                pressure.as_ref().to_uppercase(),
-            ),
+                surface_wind: wind_dir_and_speed.as_ref().to_uppercase(),
+                pressure: pressure.as_ref().to_uppercase(),
+            },
         )
     }
 }
@@ -2202,16 +2202,16 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
         let from = &fields[0][3..];
         let to = fields[1];
         let response_type = match fields[2] {
-            "C?" => ClientResponseType::Com1Freq(RadioFrequency::try_from_human_readable_string(
+            "C?" => ClientResponseType::Com1Freq { frequency: RadioFrequency::try_from_human_readable_string(
                 fields[3],
-            )?),
+            )?},
             "ATIS" => {
                 check_min_num_fields!(fields, 5);
                 match fields[3] {
-                    "V" => ClientResponseType::ATIS(AtisLine::VoiceServer(fields[4].to_string())),
+                    "V" => ClientResponseType::ATIS { atis_line: AtisLine::VoiceServer(fields[4].to_string()) },
                     "T" => {
                         let message = util::assemble_with_colons(&fields[4..]);
-                        ClientResponseType::ATIS(AtisLine::TextLine(message))
+                        ClientResponseType::ATIS {atis_line: AtisLine::TextLine(message) }
                     }
                     "Z" => {
                         let logoff_time = if fields[4].ends_with('z') {
@@ -2219,13 +2219,13 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                         } else {
                             fields[4]
                         };
-                        ClientResponseType::ATIS(AtisLine::LogoffTime(logoff_time.parse().ok()))
+                        ClientResponseType::ATIS { atis_line: AtisLine::LogoffTime(logoff_time.parse().ok()) }
                     }
                     "E" => {
                         let line_count: usize = fields[4].parse().map_err(|_| {
                             FsdMessageParseError::InvalidATISLine(fields[4].to_string())
                         })?;
-                        ClientResponseType::ATIS(AtisLine::EndMarker(line_count))
+                        ClientResponseType::ATIS { atis_line: AtisLine::EndMarker(line_count) }
                     }
                     _ => return Err(FsdMessageParseError::InvalidATISLine(fields[3].to_string())),
                 }
@@ -2233,27 +2233,27 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
             "RN" => {
                 check_min_num_fields!(fields, 4);
                 let name = fields[3].to_string();
-                let info = fields[4].to_string();
+                let sector_file: String = fields[4].to_string();
                 let rating: u8 = fields[5]
                     .parse()
                     .map_err(|_| FsdMessageParseError::InvalidRating(fields[5].to_string()))?;
-                ClientResponseType::RealName(name, info, rating)
+                ClientResponseType::RealName { name, sector_file, rating }
             }
-            "IP" => ClientResponseType::PublicIP(
-                fields
+            "IP" => ClientResponseType::PublicIP {
+                ip_address: fields
                     .get(3)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(4, fields.len()))?
                     .to_string(),
-            ),
-            "SV" => ClientResponseType::Server(
-                fields
+            },
+            "SV" => ClientResponseType::Server {
+                hostname_or_ip_address: fields
                     .get(3)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(4, fields.len()))?
                     .to_string(),
-            ),
+            },
             "ATC" => {
                 check_min_num_fields!(fields, 4);
-                let is_valid = match fields[3].to_uppercase().as_str() {
+                let valid_atc = match fields[3].to_uppercase().as_str() {
                     "Y" => true,
                     "N" => false,
                     _ => {
@@ -2262,13 +2262,13 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                         ))
                     }
                 };
-                let subject = fields.get(4).unwrap_or(&fields[1]).to_uppercase();
-                ClientResponseType::IsValidATC(subject, is_valid)
+                let atc_callsign = fields.get(4).unwrap_or(&fields[1]).to_uppercase();
+                ClientResponseType::IsValidATC { atc_callsign, valid_atc }
             }
             "CAPS" => {
                 check_min_num_fields!(fields, 4);
-                let caps = util::read_capabilities(&fields[3..]);
-                ClientResponseType::Capabilities(caps)
+                let capabilities = util::read_capabilities(&fields[3..]);
+                ClientResponseType::Capabilities { capabilities }
             }
             _ => {
                 return Err(FsdMessageParseError::UnknownMessageType(
@@ -2293,26 +2293,26 @@ impl ClientQueryResponseMessage {
         to: impl AsRef<str>,
         frequency: RadioFrequency,
     ) -> ClientQueryResponseMessage {
-        ClientQueryResponseMessage::new(from, to, ClientResponseType::Com1Freq(frequency))
+        ClientQueryResponseMessage::new(from, to, ClientResponseType::Com1Freq { frequency })
     }
     pub fn atis(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         atis_line: AtisLine,
     ) -> ClientQueryResponseMessage {
-        ClientQueryResponseMessage::new(from, to, ClientResponseType::ATIS(atis_line))
+        ClientQueryResponseMessage::new(from, to, ClientResponseType::ATIS { atis_line })
     }
     pub fn real_name(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        real_name: impl Into<String>,
-        extra_info: impl Into<String>,
+        name: impl Into<String>,
+        sector_file: impl Into<String>,
         rating: u8,
     ) -> ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
             to,
-            ClientResponseType::RealName(real_name.into(), extra_info.into(), rating),
+            ClientResponseType::RealName { name: name.into(), sector_file: sector_file.into(), rating },
         )
     }
     pub fn capabilities(
@@ -2323,7 +2323,7 @@ impl ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
             to,
-            ClientResponseType::Capabilities(capabilities.into()),
+            ClientResponseType::Capabilities { capabilities: capabilities.into() },
         )
     }
     pub fn public_ip(
@@ -2331,18 +2331,18 @@ impl ClientQueryResponseMessage {
         to: impl AsRef<str>,
         ip_address: impl Into<String>,
     ) -> ClientQueryResponseMessage {
-        ClientQueryResponseMessage::new(from, to, ClientResponseType::PublicIP(ip_address.into()))
+        ClientQueryResponseMessage::new(from, to, ClientResponseType::PublicIP { ip_address: ip_address.into() })
     }
     pub fn is_valid_atc(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        atc_callsign: impl AsRef<str>,
         valid: bool,
     ) -> ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
             to,
-            ClientResponseType::IsValidATC(subject.as_ref().to_uppercase(), valid),
+            ClientResponseType::IsValidATC { atc_callsign: atc_callsign.as_ref().to_uppercase(), valid_atc: valid },
         )
     }
 }
@@ -2408,63 +2408,63 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             "VER" => SharedStateType::Version,
             "ID" => SharedStateType::ID,
             "DI" => SharedStateType::DI,
-            "IH" => SharedStateType::IHave(
-                fields
+            "IH" => SharedStateType::IHave {
+                aircraft_callsign: fields
                     .get(4)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
-            ),
+            },
             "SC" => {
                 check_min_num_fields!(fields, 6);
                 let scratchpad_contents = fields[5].parse()?;
-                SharedStateType::ScratchPad(fields[4].to_uppercase(), scratchpad_contents)
+                SharedStateType::ScratchPad { aircraft_callsign: fields[4].to_uppercase(), contents: scratchpad_contents }
             }
             "TA" => {
                 check_min_num_fields!(fields, 6);
                 let altitude = util::parse_altitude(fields[5])?;
-                SharedStateType::TempAltitude(fields[4].to_uppercase(), altitude)
+                SharedStateType::TempAltitude { aircraft_callsign: fields[4].to_uppercase(), altitude }
             }
             "FA" => {
                 check_min_num_fields!(fields, 6);
                 let altitude = util::parse_altitude(fields[5])?;
-                SharedStateType::FinalAltitude(fields[4].to_uppercase(), altitude)
+                SharedStateType::FinalAltitude { aircraft_callsign: fields[4].to_uppercase(), altitude }
             }
             "VT" => {
                 check_min_num_fields!(fields, 6);
                 let voice_capability: VoiceCapability = fields[5].parse()?;
-                SharedStateType::VoiceType(fields[4].to_uppercase(), voice_capability)
+                SharedStateType::VoiceType { aircraft_callsign: fields[4].to_uppercase(), voice_capability }
             }
             "BC" => {
                 check_min_num_fields!(fields, 4);
-                let squawk: TransponderCode = fields[5].parse()?;
-                SharedStateType::BeaconCode(fields[4].to_uppercase(), squawk)
+                let code: TransponderCode = fields[5].parse()?;
+                SharedStateType::BeaconCode { aircraft_callsign: fields[4].to_uppercase(), code }
             }
-            "HC" => SharedStateType::HandoffCancel(
-                fields
+            "HC" => SharedStateType::HandoffCancel {
+                aircraft_callsign: fields
                     .get(4)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
-            ),
-            "PT" => SharedStateType::PointOut(
-                fields
+            },
+            "PT" => SharedStateType::PointOut {
+                aircraft_callsign: fields
                     .get(4)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
-            ),
-            "DP" => SharedStateType::PushToDepartureList(
-                fields
+            },
+            "DP" => SharedStateType::PushToDepartureList {
+                aircraft_callsign: fields
                     .get(4)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase(),
-            ),
+            },
             "ST" => {
-                let subject = fields
+                let aircraft_callsign = fields
                     .get(4)
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase();
-                let index = fields.get(5).and_then(|i| i.parse::<i32>().ok());
+                let format = fields.get(5).and_then(|i| i.parse::<i32>().ok());
                 let contents = fields.get(6..).map(|c| c.iter().map(|e| e.to_string()).collect::<Vec<_>>());
-                SharedStateType::FlightStrip(subject, index, contents)
+                SharedStateType::FlightStrip { aircraft_callsign, format, contents }
             }
             _ => {
                 return Err(FsdMessageParseError::InvalidSharedStateType(
@@ -2494,106 +2494,106 @@ impl SharedStateMessage {
     pub fn i_have(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::IHave(subject.as_ref().to_uppercase()),
+            SharedStateType::IHave { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn scratchpad(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
-        scratchpad_contents: ScratchPad,
+        aircraft_callsign: impl AsRef<str>,
+        contents: ScratchPad,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::ScratchPad(subject.as_ref().to_uppercase(), scratchpad_contents),
+            SharedStateType::ScratchPad { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents },
         )
     }
     pub fn temp_altitude(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
         altitude: u32,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::TempAltitude(subject.as_ref().to_uppercase(), altitude),
+            SharedStateType::TempAltitude { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), altitude },
         )
     }
     pub fn beacon_code(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
         code: TransponderCode,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::BeaconCode(subject.as_ref().to_uppercase(), code),
+            SharedStateType::BeaconCode { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), code },
         )
     }
     pub fn voice_type(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
-        voice_type: VoiceCapability,
+        aircraft_callsign: impl AsRef<str>,
+        voice_capability: VoiceCapability,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::VoiceType(subject.as_ref().to_uppercase(), voice_type),
+            SharedStateType::VoiceType { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), voice_capability },
         )
     }
     pub fn handoff_cancel(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::HandoffCancel(subject.as_ref().to_uppercase()),
+            SharedStateType::HandoffCancel { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn point_out(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::PointOut(subject.as_ref().to_uppercase()),
+            SharedStateType::PointOut { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn push_to_departure_list(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::PushToDepartureList(subject.as_ref().to_uppercase()),
+            SharedStateType::PushToDepartureList { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
         )
     }
     pub fn flight_strip(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        subject: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
         format: Option<i32>,
         contents: Option<Vec<String>>,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::FlightStrip(subject.as_ref().to_uppercase(), format, contents),
+            SharedStateType::FlightStrip { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), format, contents },
         )
     }
 }
