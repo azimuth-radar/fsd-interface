@@ -557,13 +557,11 @@ pub struct TextMessage {
     pub to: String,
     pub message: String,
 }
-
 impl Display for TextMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "#TM{}:{}:{}", self.from, self.to, self.message)
     }
 }
-
 impl TryFrom<&[&str]> for TextMessage {
     type Error = FsdMessageParseError;
     fn try_from(fields: &[&str]) -> Result<Self, Self::Error> {
