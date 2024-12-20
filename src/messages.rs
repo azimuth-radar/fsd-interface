@@ -1364,12 +1364,12 @@ impl MetarResponseMessage {
 pub struct PingMessage {
     pub from: String,
     pub to: String,
-    pub timestamp: u64,
+    pub data: String,
 }
 
 impl Display for PingMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "$PI{}:{}:{}", self.from, self.to, self.timestamp)
+        write!(f, "$PI{}:{}:{}", self.from, self.to, self.data)
     }
 }
 
@@ -1382,19 +1382,17 @@ impl TryFrom<&[&str]> for PingMessage {
         Ok(PingMessage::new(
             first,
             fields[1],
-            fields[2]
-                .parse()
-                .map_err(|_| FsdMessageParseError::InvalidPingTime(fields[2].to_string()))?,
+            fields[2],
         ))
     }
 }
 
 impl PingMessage {
-    pub fn new(from: impl AsRef<str>, to: impl AsRef<str>, timestamp: u64) -> Self {
+    pub fn new(from: impl AsRef<str>, to: impl AsRef<str>, data: impl AsRef<str>) -> Self {
         PingMessage {
             from: from.as_ref().to_uppercase(),
             to: to.as_ref().to_uppercase(),
-            timestamp,
+            data: data.as_ref().to_string(),
         }
     }
 }
@@ -1403,12 +1401,12 @@ impl PingMessage {
 pub struct PongMessage {
     pub from: String,
     pub to: String,
-    pub timestamp: u64,
+    pub data: String,
 }
 
 impl Display for PongMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "$PO{}:{}:{}", self.from, self.to, self.timestamp)
+        write!(f, "$PO{}:{}:{}", self.from, self.to, self.data)
     }
 }
 
@@ -1421,19 +1419,17 @@ impl TryFrom<&[&str]> for PongMessage {
         Ok(PongMessage::new(
             first,
             fields[1],
-            fields[2]
-                .parse()
-                .map_err(|_| FsdMessageParseError::InvalidPingTime(fields[2].to_string()))?,
+            fields[2],
         ))
     }
 }
 
 impl PongMessage {
-    pub fn new(from: impl AsRef<str>, to: impl AsRef<str>, timestamp: u64) -> Self {
+    pub fn new(from: impl AsRef<str>, to: impl AsRef<str>, data: impl AsRef<str>) -> Self {
         PongMessage {
             from: from.as_ref().to_uppercase(),
             to: to.as_ref().to_uppercase(),
-            timestamp,
+            data: data.as_ref().to_string(),
         }
     }
 }
