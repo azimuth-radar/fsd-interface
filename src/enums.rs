@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::net::Ipv4Addr;
 use std::{fmt::Display, str::FromStr};
 
 use crate::messages::*;
@@ -726,6 +727,7 @@ pub enum SharedStateType {
     FlightStrip { aircraft_callsign: String, format: Option<i32>, contents: Option<Vec<String>> },
     PushToDepartureList { aircraft_callsign: String },
     PointOut { aircraft_callsign: String },
+    LandLine { landline_type: LandLineType, landline_command: LandLineCommand },
 }
 
 impl Display for SharedStateType {
@@ -762,9 +764,43 @@ impl Display for SharedStateType {
                     }
                 }
                 Ok(())
+            },
+            SharedStateType::LandLine { landline_type, landline_command } => {
+                match (*landline_type, *landline_command) {
+                    (LandLineType::Intercom, LandLineCommand::Request { ip_address, port }) => write!(f, "IC:{ip_address}:{port}"),
+                    (LandLineType::Intercom, LandLineCommand::Approve { ip_address, port }) => write!(f, "IK:{ip_address}:{port}"),
+                    (LandLineType::Intercom, LandLineCommand::Reject) => write!(f, "IB"),
+                    (LandLineType::Intercom, LandLineCommand::End) => write!(f, "EC"),
+
+                    (LandLineType::Override, LandLineCommand::Request { ip_address, port }) => write!(f, "OV:{ip_address}:{port}"),
+                    (LandLineType::Override, LandLineCommand::Approve { ip_address, port }) => write!(f, "OK:{ip_address}:{port}"),
+                    (LandLineType::Override, LandLineCommand::Reject) => write!(f, "OB"),
+                    (LandLineType::Override, LandLineCommand::End) => write!(f, "EO"),
+
+                    (LandLineType::Monitor, LandLineCommand::Request { ip_address, port }) => write!(f, "MN:{ip_address}:{port}"),
+                    (LandLineType::Monitor, LandLineCommand::Approve { ip_address, port }) => write!(f, "MK:{ip_address}:{port}"),
+                    (LandLineType::Monitor, LandLineCommand::Reject) => write!(f, "MB"),
+                    (LandLineType::Monitor, LandLineCommand::End) => write!(f, "EM"),
+                }
             }
         }
     }
+}
+
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum LandLineType {
+    Intercom,
+    Override,
+    Monitor
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+pub enum LandLineCommand {
+    Request  { ip_address: Ipv4Addr, port: u16 },
+    Approve { ip_address: Ipv4Addr, port: u16 },
+    Reject,
+    End
 }
 
 #[derive(Debug, Clone, Copy)]

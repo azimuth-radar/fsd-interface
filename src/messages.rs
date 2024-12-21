@@ -2,20 +2,16 @@
 //!
 //!
 
-use std::{collections::HashSet, fmt::Display};
+use std::{collections::HashSet, fmt::Display, net::Ipv4Addr};
 
 use chrono::NaiveDateTime;
 
 use crate::{
-    aircraft_config::AircraftConfig,
-    enums::{
+    aircraft_config::AircraftConfig, enums::{
         AtcRating, AtcType, AtisLine, ClientCapability, ClientQueryType, ClientResponseType,
         PilotRating, ProtocolRevision, SharedStateType, SimulatorType, TransponderMode,
         VoiceCapability,
-    },
-    errors::{FsdError, FsdMessageParseError},
-    structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode},
-    util, ScratchPad,
+    }, errors::{FsdError, FsdMessageParseError}, structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode}, util, LandLineCommand, LandLineType, ScratchPad
 };
 
 pub const SERVER_CALLSIGN: &str = "SERVER";
@@ -2466,6 +2462,29 @@ impl TryFrom<&[&str]> for SharedStateMessage {
                 let contents = fields.get(6..).map(|c| c.iter().map(|e| e.to_string()).collect::<Vec<_>>());
                 SharedStateType::FlightStrip { aircraft_callsign, format, contents }
             }
+            "IC" | "IK" | "IB" | "EC" | "OV" | "OK" | "OB" | "EO" | "MN" | "MK" | "MB" | "EM" => {
+                let ip_address = fields.get(4).and_then(|ip| ip.parse::<Ipv4Addr>().ok()).ok_or_else(|| FsdMessageParseError::InvalidIPAddress(fields.get(4).map(|x| x.to_string()).unwrap_or_default()));;
+                let port = fields.get(5).and_then(|port| port.parse::<u16>().ok()).ok_or_else(|| FsdMessageParseError::InvalidPort(fields.get(5).map(|x| x.to_string()).unwrap_or_default()));
+                let (landline_type, landline_command) = match fields[3] {
+                    "IC" => (LandLineType::Intercom, LandLineCommand::Request { ip_address: ip_address?, port: port? }),
+                    "IK" => (LandLineType::Intercom, LandLineCommand::Approve { ip_address: ip_address?, port: port? }),
+                    "IB" => (LandLineType::Intercom, LandLineCommand::Reject),
+                    "EC" => (LandLineType::Intercom, LandLineCommand::End),
+
+                    "OV" => (LandLineType::Override, LandLineCommand::Request { ip_address: ip_address?, port: port? }),
+                    "OK" => (LandLineType::Override, LandLineCommand::Approve { ip_address: ip_address?, port: port? }),
+                    "OB" => (LandLineType::Override, LandLineCommand::Reject),
+                    "EO" => (LandLineType::Override, LandLineCommand::End),
+
+                    "MN" => (LandLineType::Monitor, LandLineCommand::Request { ip_address: ip_address?, port: port? }),
+                    "MK" => (LandLineType::Monitor, LandLineCommand::Approve { ip_address: ip_address?, port: port? }),
+                    "MB" => (LandLineType::Monitor, LandLineCommand::Reject),
+                    "EM" => (LandLineType::Monitor, LandLineCommand::End),
+
+                    _ => unreachable!()
+                };
+                SharedStateType::LandLine { landline_type, landline_command }
+            },
             _ => {
                 return Err(FsdMessageParseError::InvalidSharedStateType(
                     fields[3].to_string(),
@@ -2595,6 +2614,14 @@ impl SharedStateMessage {
             to,
             SharedStateType::FlightStrip { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), format, contents },
         )
+    }
+    pub fn land_line(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        landline_type: LandLineType,
+        landline_command: LandLineCommand,
+    ) -> SharedStateMessage {
+        SharedStateMessage::new(from, to, SharedStateType::LandLine { landline_type, landline_command })
     }
 }
 

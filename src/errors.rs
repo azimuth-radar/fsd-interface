@@ -68,6 +68,10 @@ pub enum FsdMessageParseError {
     InvalidSharedStateType(String),
     #[error("{0} is not a valid client capability")]
     InvalidClientCapability(String),
+    #[error("{0} is not a valid IP addrees")]
+    InvalidIPAddress(String),
+    #[error("{0} is not a valid port")]
+    InvalidPort(String)
 }
 
 /// An error message received from the FSD server
