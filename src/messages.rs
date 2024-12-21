@@ -1943,6 +1943,14 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                     fields[1],
                     ClientQueryType::SimTime { time },
                 ))
+            },
+            "GD" => {
+                check_min_num_fields!(fields, 5);
+                let aircraft_callsign = fields[4].to_uppercase();
+                let contents = fields[4].to_string();
+                Ok(
+                    ClientQueryMessage::new(first, fields[1], ClientQueryType::SetGlobalData { aircraft_callsign, contents })
+                )
             }
             _ => Err(FsdMessageParseError::UnknownMessageType(
                 fields[2].to_string(),
@@ -2115,6 +2123,14 @@ impl ClientQueryMessage {
             to,
             ClientQueryType::SetScratchpad { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents },
         )
+    }
+    pub fn set_global_data(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
+        contents: impl AsRef<str>,
+    ) -> ClientQueryMessage {
+        ClientQueryMessage::new(from, to, ClientQueryType::SetGlobalData { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents: contents.as_ref().to_string() })
     }
     pub fn set_voice_type(
         from: impl AsRef<str>,
@@ -2414,6 +2430,12 @@ impl TryFrom<&[&str]> for SharedStateMessage {
                 check_min_num_fields!(fields, 6);
                 let scratchpad_contents = fields[5].parse()?;
                 SharedStateType::ScratchPad { aircraft_callsign: fields[4].to_uppercase(), contents: scratchpad_contents }
+            },
+            "GD" => {
+                check_min_num_fields!(fields, 6);
+                let aircraft_callsign = fields[4].to_uppercase();
+                let contents = fields[5].to_string();
+                SharedStateType::GlobalData { aircraft_callsign, contents }
             }
             "TA" => {
                 check_min_num_fields!(fields, 6);
@@ -2532,6 +2554,14 @@ impl SharedStateMessage {
             to,
             SharedStateType::ScratchPad { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents },
         )
+    }
+    pub fn global_data(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        aircraft_callsign: impl AsRef<str>,
+        contents: impl AsRef<str>
+    ) -> SharedStateMessage {
+        SharedStateMessage::new(from, to, SharedStateType::GlobalData { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents: contents.as_ref().to_string() })
     }
     pub fn temp_altitude(
         from: impl AsRef<str>,

@@ -589,7 +589,7 @@ pub enum ClientQueryType {
     NewInfo { atis_letter: char },                                                  //NEWINFO
     NewATIS { atis_letter: char, surface_wind: String, pressure: String },          //NEWATIS
     //Estimate,                                                                     //EST
-    //SetGlobalData,                                                                //GD
+    SetGlobalData { aircraft_callsign: String, contents: String },                  //GD
 }
 
 impl Display for ClientQueryType {
@@ -644,6 +644,9 @@ impl Display for ClientQueryType {
             }
             ClientQueryType::SimTime { time } => {
                 write!(f, "SIMTIME:{}", time.format("Y%m%d%H%M%S"))
+            }
+            ClientQueryType::SetGlobalData { aircraft_callsign, contents } => {
+                write!(f, "GD:{}:{}", aircraft_callsign, contents)
             }
         }
     }
@@ -728,6 +731,7 @@ pub enum SharedStateType {
     PushToDepartureList { aircraft_callsign: String },
     PointOut { aircraft_callsign: String },
     LandLine { landline_type: LandLineType, landline_command: LandLineCommand },
+    GlobalData { aircraft_callsign: String, contents: String },
 }
 
 impl Display for SharedStateType {
@@ -782,7 +786,8 @@ impl Display for SharedStateType {
                     (LandLineType::Monitor, LandLineCommand::Reject) => write!(f, "MB"),
                     (LandLineType::Monitor, LandLineCommand::End) => write!(f, "EM"),
                 }
-            }
+            },
+            SharedStateType::GlobalData { aircraft_callsign, contents } => write!(f, "GD:{aircraft_callsign}:{contents}")
         }
     }
 }
