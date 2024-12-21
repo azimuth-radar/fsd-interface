@@ -7,11 +7,15 @@ use std::{collections::HashSet, fmt::Display, net::Ipv4Addr};
 use chrono::NaiveDateTime;
 
 use crate::{
-    aircraft_config::AircraftConfig, enums::{
+    aircraft_config::AircraftConfig,
+    enums::{
         AtcRating, AtcType, AtisLine, ClientCapability, ClientQueryType, ClientResponseType,
         PilotRating, ProtocolRevision, SharedStateType, SimulatorType, TransponderMode,
         VoiceCapability,
-    }, errors::{FsdError, FsdMessageParseError}, structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode}, util, LandLineCommand, LandLineType, ScratchPad
+    },
+    errors::{FsdError, FsdMessageParseError},
+    structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode},
+    util, LandLineCommand, LandLineType, ScratchPad,
 };
 
 pub const SERVER_CALLSIGN: &str = "SERVER";
@@ -183,8 +187,7 @@ impl Display for AtcDeregisterMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(cid) = &self.cid {
             write!(f, "#DA{}:{}", self.from, cid)
-        }
-        else {
+        } else {
             write!(f, "#DA{}", self.from)
         }
     }
@@ -196,12 +199,10 @@ impl TryFrom<&[&str]> for AtcDeregisterMessage {
         check_min_num_fields!(fields, 1);
         let first = &fields[0][3..];
         let cid = fields.get(1).map(|s| s.to_string());
-        Ok(
-            AtcDeregisterMessage {
-                from: first.to_uppercase(),
-                cid
-            }
-        )
+        Ok(AtcDeregisterMessage {
+            from: first.to_uppercase(),
+            cid,
+        })
     }
 }
 
@@ -225,8 +226,7 @@ impl Display for PilotDeregisterMessage {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(cid) = &self.cid {
             write!(f, "#DP{}:{}", self.from, cid)
-        }
-        else {
+        } else {
             write!(f, "#DP{}", self.from)
         }
     }
@@ -238,12 +238,10 @@ impl TryFrom<&[&str]> for PilotDeregisterMessage {
         check_min_num_fields!(fields, 1);
         let first = &fields[0][3..];
         let cid = fields.get(1).map(|s| s.to_string());
-        Ok(
-            PilotDeregisterMessage {
-                from: first.to_uppercase(),
-                cid
-            }
-        )
+        Ok(PilotDeregisterMessage {
+            from: first.to_uppercase(),
+            cid,
+        })
     }
 }
 
@@ -1395,11 +1393,7 @@ impl TryFrom<&[&str]> for PingMessage {
         check_min_num_fields!(fields, 3);
         let first = &fields[0][3..];
 
-        Ok(PingMessage::new(
-            first,
-            fields[1],
-            fields[2],
-        ))
+        Ok(PingMessage::new(first, fields[1], fields[2]))
     }
 }
 
@@ -1432,11 +1426,7 @@ impl TryFrom<&[&str]> for PongMessage {
         check_min_num_fields!(fields, 3);
         let first = &fields[0][3..];
 
-        Ok(PongMessage::new(
-            first,
-            fields[1],
-            fields[2],
-        ))
+        Ok(PongMessage::new(first, fields[1], fields[2]))
     }
 }
 
@@ -1722,16 +1712,27 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             )),
             "IPC" => {
                 //$CQserver:N194Q:IPC:W:852:8704
-                let remainder = fields.get(3..6).ok_or(FsdMessageParseError::InvalidFieldCount(6, 3))?;
+                let remainder = fields
+                    .get(3..6)
+                    .ok_or(FsdMessageParseError::InvalidFieldCount(6, 3))?;
                 if remainder[0] != "W" || remainder[1] != "852" {
-                    return Err(FsdMessageParseError::UnknownMessageType(format!("IPC:{}:{}:{}", fields[0], fields[1], fields[2])));
+                    return Err(FsdMessageParseError::UnknownMessageType(format!(
+                        "IPC:{}:{}:{}",
+                        fields[0], fields[1], fields[2]
+                    )));
                 }
                 let code = TransponderCode::try_from_bcd_format(remainder[2])?;
-                Ok(
-                    ClientQueryMessage::new(first, fields[1], ClientQueryType::ForceBeaconCode { code })
-                )
-            },
-            "SV" => Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::Server)),
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::ForceBeaconCode { code },
+                ))
+            }
+            "SV" => Ok(ClientQueryMessage::new(
+                first,
+                fields[1],
+                ClientQueryType::Server,
+            )),
             "ACC" => {
                 let data = fields
                     .get(3)
@@ -1757,7 +1758,9 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                     Ok(ClientQueryMessage::new(
                         first,
                         fields[1],
-                        ClientQueryType::AircraftConfigurationResponse { aircraft_config: data.as_str().parse()? },
+                        ClientQueryType::AircraftConfigurationResponse {
+                            aircraft_config: data.as_str().parse()?,
+                        },
                     ))
                 }
             }
@@ -1773,8 +1776,12 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                         message = None;
                     }
                 }
-                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::HelpRequest { message }))
-            },
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::HelpRequest { message },
+                ))
+            }
             "NOHLP" => {
                 let mut message = fields.get(3).map(|s| s.to_string());
                 if let Some(ref msg) = message {
@@ -1782,15 +1789,22 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                         message = None;
                     }
                 }
-                Ok(ClientQueryMessage::new(first, fields[1], ClientQueryType::CancelHelpRequest { message }))
-            },
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::CancelHelpRequest { message },
+                ))
+            }
             "SC" => {
                 check_min_num_fields!(fields, 5);
                 let contents = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetScratchpad { aircraft_callsign: fields[3].to_uppercase(), contents },
+                    ClientQueryType::SetScratchpad {
+                        aircraft_callsign: fields[3].to_uppercase(),
+                        contents,
+                    },
                 ))
             }
             "FA" => {
@@ -1799,7 +1813,10 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetFinalAltitude{ aircraft_callsign: fields[3].to_uppercase(), altitude },
+                    ClientQueryType::SetFinalAltitude {
+                        aircraft_callsign: fields[3].to_uppercase(),
+                        altitude,
+                    },
                 ))
             }
             "BC" => {
@@ -1808,12 +1825,14 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetBeaconCode { aircraft_callsign: fields[3].to_uppercase(), code },
+                    ClientQueryType::SetBeaconCode {
+                        aircraft_callsign: fields[3].to_uppercase(),
+                        code,
+                    },
                 ))
             }
             "ATC" => {
-                let atc_callsign = fields
-                    .get(3).unwrap_or(&first).to_uppercase();
+                let atc_callsign = fields.get(3).unwrap_or(&first).to_uppercase();
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
@@ -1837,20 +1856,28 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::NewATIS { atis_letter, surface_wind, pressure },
+                    ClientQueryType::NewATIS {
+                        atis_letter,
+                        surface_wind,
+                        pressure,
+                    },
                 ))
             }
             // $CQLFMD_ATIS:@94835:NEWINFO:O
             "NEWINFO" => {
                 check_min_num_fields!(fields, 4);
-                let atis_letter = fields[3].chars().last().and_then(|c| {
-                    let c = c.to_ascii_uppercase();
-                    if (c as u8) < 65 || (c as u8) > 90 {
-                        None
-                    } else {
-                        Some(c)
-                    }
-                }).ok_or_else(|| FsdMessageParseError::InvalidATISLine(fields.join(":")))?;
+                let atis_letter = fields[3]
+                    .chars()
+                    .last()
+                    .and_then(|c| {
+                        let c = c.to_ascii_uppercase();
+                        if (c as u8) < 65 || (c as u8) > 90 {
+                            None
+                        } else {
+                            Some(c)
+                        }
+                    })
+                    .ok_or_else(|| FsdMessageParseError::InvalidATISLine(fields.join(":")))?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
@@ -1862,7 +1889,10 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetVoiceType { aircraft_callsign: fields[3].to_uppercase(), voice_capability: fields[4].parse()? },
+                    ClientQueryType::SetVoiceType {
+                        aircraft_callsign: fields[3].to_uppercase(),
+                        voice_capability: fields[4].parse()?,
+                    },
                 ))
             }
             "WH" => {
@@ -1881,7 +1911,10 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::SetTempAltitude { aircraft_callsign, altitude },
+                    ClientQueryType::SetTempAltitude {
+                        aircraft_callsign,
+                        altitude,
+                    },
                 ))
             }
             "HT" => {
@@ -1891,7 +1924,10 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
-                    ClientQueryType::AcceptHandoff { aircraft_callsign, atc_callsign },
+                    ClientQueryType::AcceptHandoff {
+                        aircraft_callsign,
+                        atc_callsign,
+                    },
                 ))
             }
             "DR" => {
@@ -1943,14 +1979,19 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                     fields[1],
                     ClientQueryType::SimTime { time },
                 ))
-            },
+            }
             "GD" => {
                 check_min_num_fields!(fields, 5);
                 let aircraft_callsign = fields[4].to_uppercase();
                 let contents = fields[4].to_string();
-                Ok(
-                    ClientQueryMessage::new(first, fields[1], ClientQueryType::SetGlobalData { aircraft_callsign, contents })
-                )
+                Ok(ClientQueryMessage::new(
+                    first,
+                    fields[1],
+                    ClientQueryType::SetGlobalData {
+                        aircraft_callsign,
+                        contents,
+                    },
+                ))
             }
             _ => Err(FsdMessageParseError::UnknownMessageType(
                 fields[2].to_string(),
@@ -1966,15 +2007,27 @@ impl ClientQueryMessage {
             query_type,
         }
     }
-    pub fn force_beacon_code(from: impl AsRef<str>, to: impl AsRef<str>, code: TransponderCode) -> ClientQueryMessage {
+    pub fn force_beacon_code(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        code: TransponderCode,
+    ) -> ClientQueryMessage {
         ClientQueryMessage::new(from, to, ClientQueryType::ForceBeaconCode { code })
     }
-    pub fn help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
+    pub fn help_request(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        message: Option<impl AsRef<str>>,
+    ) -> ClientQueryMessage {
         let message = message.map(|msg| msg.as_ref().to_string());
         ClientQueryMessage::new(from, to, ClientQueryType::HelpRequest { message })
     }
 
-    pub fn cancel_help_request(from: impl AsRef<str>, to: impl AsRef<str>, message: Option<impl AsRef<str>>) -> ClientQueryMessage {
+    pub fn cancel_help_request(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        message: Option<impl AsRef<str>>,
+    ) -> ClientQueryMessage {
         let message = message.map(|msg| msg.as_ref().to_string());
         ClientQueryMessage::new(from, to, ClientQueryType::CancelHelpRequest { message })
     }
@@ -2005,7 +2058,9 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::IsValidATC { atc_callsign: atc_callsign.as_ref().to_uppercase() },
+            ClientQueryType::IsValidATC {
+                atc_callsign: atc_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn client_information(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
@@ -2019,7 +2074,9 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::FlightPlan { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            ClientQueryType::FlightPlan {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn request_relief(from: impl AsRef<str>, to: impl AsRef<str>) -> ClientQueryMessage {
@@ -2036,7 +2093,9 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::WhoHas { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            ClientQueryType::WhoHas {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn initiate_track(
@@ -2047,7 +2106,9 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::InitiateTrack { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            ClientQueryType::InitiateTrack {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn accept_handoff(
@@ -2073,7 +2134,9 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::DropTrack { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            ClientQueryType::DropTrack {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn set_final_altitude(
@@ -2085,7 +2148,10 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetFinalAltitude { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), altitude },
+            ClientQueryType::SetFinalAltitude {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                altitude,
+            },
         )
     }
     pub fn set_temp_altitude(
@@ -2097,7 +2163,10 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetTempAltitude { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), altitude },
+            ClientQueryType::SetTempAltitude {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                altitude,
+            },
         )
     }
     pub fn set_beacon_code(
@@ -2109,7 +2178,10 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetBeaconCode { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), code },
+            ClientQueryType::SetBeaconCode {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                code,
+            },
         )
     }
     pub fn set_scratchpad(
@@ -2121,7 +2193,10 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetScratchpad { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents },
+            ClientQueryType::SetScratchpad {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                contents,
+            },
         )
     }
     pub fn set_global_data(
@@ -2130,7 +2205,14 @@ impl ClientQueryMessage {
         aircraft_callsign: impl AsRef<str>,
         contents: impl AsRef<str>,
     ) -> ClientQueryMessage {
-        ClientQueryMessage::new(from, to, ClientQueryType::SetGlobalData { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents: contents.as_ref().to_string() })
+        ClientQueryMessage::new(
+            from,
+            to,
+            ClientQueryType::SetGlobalData {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                contents: contents.as_ref().to_string(),
+            },
+        )
     }
     pub fn set_voice_type(
         from: impl AsRef<str>,
@@ -2141,7 +2223,10 @@ impl ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
-            ClientQueryType::SetVoiceType { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), voice_capability },
+            ClientQueryType::SetVoiceType {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                voice_capability,
+            },
         )
     }
     pub fn aircraft_config_request(
@@ -2166,13 +2251,7 @@ impl ClientQueryMessage {
         to: impl AsRef<str>,
         atis_letter: char,
     ) -> ClientQueryMessage {
-        ClientQueryMessage::new(
-            from,
-            to,
-            ClientQueryType::NewInfo {
-                atis_letter
-            },
-        )
+        ClientQueryMessage::new(from, to, ClientQueryType::NewInfo { atis_letter })
     }
     pub fn new_atis(
         from: impl AsRef<str>,
@@ -2214,16 +2293,20 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
         let from = &fields[0][3..];
         let to = fields[1];
         let response_type = match fields[2] {
-            "C?" => ClientResponseType::Com1Freq { frequency: RadioFrequency::try_from_human_readable_string(
-                fields[3],
-            )?},
+            "C?" => ClientResponseType::Com1Freq {
+                frequency: RadioFrequency::try_from_human_readable_string(fields[3])?,
+            },
             "ATIS" => {
                 check_min_num_fields!(fields, 5);
                 match fields[3] {
-                    "V" => ClientResponseType::ATIS { atis_line: AtisLine::VoiceServer(fields[4].to_string()) },
+                    "V" => ClientResponseType::ATIS {
+                        atis_line: AtisLine::VoiceServer(fields[4].to_string()),
+                    },
                     "T" => {
                         let message = util::assemble_with_colons(&fields[4..]);
-                        ClientResponseType::ATIS {atis_line: AtisLine::TextLine(message) }
+                        ClientResponseType::ATIS {
+                            atis_line: AtisLine::TextLine(message),
+                        }
                     }
                     "Z" => {
                         let logoff_time = if fields[4].ends_with('z') {
@@ -2231,13 +2314,17 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                         } else {
                             fields[4]
                         };
-                        ClientResponseType::ATIS { atis_line: AtisLine::LogoffTime(logoff_time.parse().ok()) }
+                        ClientResponseType::ATIS {
+                            atis_line: AtisLine::LogoffTime(logoff_time.parse().ok()),
+                        }
                     }
                     "E" => {
                         let line_count: usize = fields[4].parse().map_err(|_| {
                             FsdMessageParseError::InvalidATISLine(fields[4].to_string())
                         })?;
-                        ClientResponseType::ATIS { atis_line: AtisLine::EndMarker(line_count) }
+                        ClientResponseType::ATIS {
+                            atis_line: AtisLine::EndMarker(line_count),
+                        }
                     }
                     _ => return Err(FsdMessageParseError::InvalidATISLine(fields[3].to_string())),
                 }
@@ -2249,7 +2336,11 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                 let rating: u8 = fields[5]
                     .parse()
                     .map_err(|_| FsdMessageParseError::InvalidRating(fields[5].to_string()))?;
-                ClientResponseType::RealName { name, sector_file, rating }
+                ClientResponseType::RealName {
+                    name,
+                    sector_file,
+                    rating,
+                }
             }
             "IP" => ClientResponseType::PublicIP {
                 ip_address: fields
@@ -2275,7 +2366,10 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                     }
                 };
                 let atc_callsign = fields.get(4).unwrap_or(&fields[1]).to_uppercase();
-                ClientResponseType::IsValidATC { atc_callsign, valid_atc }
+                ClientResponseType::IsValidATC {
+                    atc_callsign,
+                    valid_atc,
+                }
             }
             "CAPS" => {
                 check_min_num_fields!(fields, 4);
@@ -2324,7 +2418,11 @@ impl ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
             to,
-            ClientResponseType::RealName { name: name.into(), sector_file: sector_file.into(), rating },
+            ClientResponseType::RealName {
+                name: name.into(),
+                sector_file: sector_file.into(),
+                rating,
+            },
         )
     }
     pub fn capabilities(
@@ -2335,7 +2433,9 @@ impl ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
             to,
-            ClientResponseType::Capabilities { capabilities: capabilities.into() },
+            ClientResponseType::Capabilities {
+                capabilities: capabilities.into(),
+            },
         )
     }
     pub fn public_ip(
@@ -2343,7 +2443,13 @@ impl ClientQueryResponseMessage {
         to: impl AsRef<str>,
         ip_address: impl Into<String>,
     ) -> ClientQueryResponseMessage {
-        ClientQueryResponseMessage::new(from, to, ClientResponseType::PublicIP { ip_address: ip_address.into() })
+        ClientQueryResponseMessage::new(
+            from,
+            to,
+            ClientResponseType::PublicIP {
+                ip_address: ip_address.into(),
+            },
+        )
     }
     pub fn is_valid_atc(
         from: impl AsRef<str>,
@@ -2354,7 +2460,10 @@ impl ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
             to,
-            ClientResponseType::IsValidATC { atc_callsign: atc_callsign.as_ref().to_uppercase(), valid_atc: valid },
+            ClientResponseType::IsValidATC {
+                atc_callsign: atc_callsign.as_ref().to_uppercase(),
+                valid_atc: valid,
+            },
         )
     }
 }
@@ -2429,33 +2538,51 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             "SC" => {
                 check_min_num_fields!(fields, 6);
                 let scratchpad_contents = fields[5].parse()?;
-                SharedStateType::ScratchPad { aircraft_callsign: fields[4].to_uppercase(), contents: scratchpad_contents }
-            },
+                SharedStateType::ScratchPad {
+                    aircraft_callsign: fields[4].to_uppercase(),
+                    contents: scratchpad_contents,
+                }
+            }
             "GD" => {
                 check_min_num_fields!(fields, 6);
                 let aircraft_callsign = fields[4].to_uppercase();
                 let contents = fields[5].to_string();
-                SharedStateType::GlobalData { aircraft_callsign, contents }
+                SharedStateType::GlobalData {
+                    aircraft_callsign,
+                    contents,
+                }
             }
             "TA" => {
                 check_min_num_fields!(fields, 6);
                 let altitude = util::parse_altitude(fields[5])?;
-                SharedStateType::TempAltitude { aircraft_callsign: fields[4].to_uppercase(), altitude }
+                SharedStateType::TempAltitude {
+                    aircraft_callsign: fields[4].to_uppercase(),
+                    altitude,
+                }
             }
             "FA" => {
                 check_min_num_fields!(fields, 6);
                 let altitude = util::parse_altitude(fields[5])?;
-                SharedStateType::FinalAltitude { aircraft_callsign: fields[4].to_uppercase(), altitude }
+                SharedStateType::FinalAltitude {
+                    aircraft_callsign: fields[4].to_uppercase(),
+                    altitude,
+                }
             }
             "VT" => {
                 check_min_num_fields!(fields, 6);
                 let voice_capability: VoiceCapability = fields[5].parse()?;
-                SharedStateType::VoiceType { aircraft_callsign: fields[4].to_uppercase(), voice_capability }
+                SharedStateType::VoiceType {
+                    aircraft_callsign: fields[4].to_uppercase(),
+                    voice_capability,
+                }
             }
             "BC" => {
                 check_min_num_fields!(fields, 4);
                 let code: TransponderCode = fields[5].parse()?;
-                SharedStateType::BeaconCode { aircraft_callsign: fields[4].to_uppercase(), code }
+                SharedStateType::BeaconCode {
+                    aircraft_callsign: fields[4].to_uppercase(),
+                    code,
+                }
             }
             "HC" => SharedStateType::HandoffCancel {
                 aircraft_callsign: fields
@@ -2481,32 +2608,91 @@ impl TryFrom<&[&str]> for SharedStateMessage {
                     .ok_or(FsdMessageParseError::InvalidFieldCount(5, fields.len()))?
                     .to_uppercase();
                 let format = fields.get(5).and_then(|i| i.parse::<i32>().ok());
-                let contents = fields.get(6..).map(|c| c.iter().map(|e| e.to_string()).collect::<Vec<_>>());
-                SharedStateType::FlightStrip { aircraft_callsign, format, contents }
+                let contents = fields
+                    .get(6..)
+                    .map(|c| c.iter().map(|e| e.to_string()).collect::<Vec<_>>());
+                SharedStateType::FlightStrip {
+                    aircraft_callsign,
+                    format,
+                    contents,
+                }
             }
             "IC" | "IK" | "IB" | "EC" | "OV" | "OK" | "OB" | "EO" | "MN" | "MK" | "MB" | "EM" => {
-                let ip_address = fields.get(4).and_then(|ip| ip.parse::<Ipv4Addr>().ok()).ok_or_else(|| FsdMessageParseError::InvalidIPAddress(fields.get(4).map(|x| x.to_string()).unwrap_or_default()));;
-                let port = fields.get(5).and_then(|port| port.parse::<u16>().ok()).ok_or_else(|| FsdMessageParseError::InvalidPort(fields.get(5).map(|x| x.to_string()).unwrap_or_default()));
+                let ip_address = fields
+                    .get(4)
+                    .and_then(|ip| ip.parse::<Ipv4Addr>().ok())
+                    .ok_or_else(|| {
+                        FsdMessageParseError::InvalidIPAddress(
+                            fields.get(4).map(|x| x.to_string()).unwrap_or_default(),
+                        )
+                    });
+                let port = fields
+                    .get(5)
+                    .and_then(|port| port.parse::<u16>().ok())
+                    .ok_or_else(|| {
+                        FsdMessageParseError::InvalidPort(
+                            fields.get(5).map(|x| x.to_string()).unwrap_or_default(),
+                        )
+                    });
                 let (landline_type, landline_command) = match fields[3] {
-                    "IC" => (LandLineType::Intercom, LandLineCommand::Request { ip_address: ip_address?, port: port? }),
-                    "IK" => (LandLineType::Intercom, LandLineCommand::Approve { ip_address: ip_address?, port: port? }),
+                    "IC" => (
+                        LandLineType::Intercom,
+                        LandLineCommand::Request {
+                            ip_address: ip_address?,
+                            port: port?,
+                        },
+                    ),
+                    "IK" => (
+                        LandLineType::Intercom,
+                        LandLineCommand::Approve {
+                            ip_address: ip_address?,
+                            port: port?,
+                        },
+                    ),
                     "IB" => (LandLineType::Intercom, LandLineCommand::Reject),
                     "EC" => (LandLineType::Intercom, LandLineCommand::End),
 
-                    "OV" => (LandLineType::Override, LandLineCommand::Request { ip_address: ip_address?, port: port? }),
-                    "OK" => (LandLineType::Override, LandLineCommand::Approve { ip_address: ip_address?, port: port? }),
+                    "OV" => (
+                        LandLineType::Override,
+                        LandLineCommand::Request {
+                            ip_address: ip_address?,
+                            port: port?,
+                        },
+                    ),
+                    "OK" => (
+                        LandLineType::Override,
+                        LandLineCommand::Approve {
+                            ip_address: ip_address?,
+                            port: port?,
+                        },
+                    ),
                     "OB" => (LandLineType::Override, LandLineCommand::Reject),
                     "EO" => (LandLineType::Override, LandLineCommand::End),
 
-                    "MN" => (LandLineType::Monitor, LandLineCommand::Request { ip_address: ip_address?, port: port? }),
-                    "MK" => (LandLineType::Monitor, LandLineCommand::Approve { ip_address: ip_address?, port: port? }),
+                    "MN" => (
+                        LandLineType::Monitor,
+                        LandLineCommand::Request {
+                            ip_address: ip_address?,
+                            port: port?,
+                        },
+                    ),
+                    "MK" => (
+                        LandLineType::Monitor,
+                        LandLineCommand::Approve {
+                            ip_address: ip_address?,
+                            port: port?,
+                        },
+                    ),
                     "MB" => (LandLineType::Monitor, LandLineCommand::Reject),
                     "EM" => (LandLineType::Monitor, LandLineCommand::End),
 
-                    _ => unreachable!()
+                    _ => unreachable!(),
                 };
-                SharedStateType::LandLine { landline_type, landline_command }
-            },
+                SharedStateType::LandLine {
+                    landline_type,
+                    landline_command,
+                }
+            }
             _ => {
                 return Err(FsdMessageParseError::InvalidSharedStateType(
                     fields[3].to_string(),
@@ -2540,7 +2726,9 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::IHave { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            SharedStateType::IHave {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn scratchpad(
@@ -2552,16 +2740,26 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::ScratchPad { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents },
+            SharedStateType::ScratchPad {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                contents,
+            },
         )
     }
     pub fn global_data(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        contents: impl AsRef<str>
+        contents: impl AsRef<str>,
     ) -> SharedStateMessage {
-        SharedStateMessage::new(from, to, SharedStateType::GlobalData { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), contents: contents.as_ref().to_string() })
+        SharedStateMessage::new(
+            from,
+            to,
+            SharedStateType::GlobalData {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                contents: contents.as_ref().to_string(),
+            },
+        )
     }
     pub fn temp_altitude(
         from: impl AsRef<str>,
@@ -2572,7 +2770,10 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::TempAltitude { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), altitude },
+            SharedStateType::TempAltitude {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                altitude,
+            },
         )
     }
     pub fn beacon_code(
@@ -2584,7 +2785,10 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::BeaconCode { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), code },
+            SharedStateType::BeaconCode {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                code,
+            },
         )
     }
     pub fn voice_type(
@@ -2596,7 +2800,10 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::VoiceType { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), voice_capability },
+            SharedStateType::VoiceType {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                voice_capability,
+            },
         )
     }
     pub fn handoff_cancel(
@@ -2607,7 +2814,9 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::HandoffCancel { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            SharedStateType::HandoffCancel {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn point_out(
@@ -2618,7 +2827,9 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::PointOut { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            SharedStateType::PointOut {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn push_to_departure_list(
@@ -2629,7 +2840,9 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::PushToDepartureList { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase() },
+            SharedStateType::PushToDepartureList {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+            },
         )
     }
     pub fn flight_strip(
@@ -2642,7 +2855,11 @@ impl SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
-            SharedStateType::FlightStrip { aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(), format, contents },
+            SharedStateType::FlightStrip {
+                aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
+                format,
+                contents,
+            },
         )
     }
     pub fn land_line(
@@ -2651,7 +2868,14 @@ impl SharedStateMessage {
         landline_type: LandLineType,
         landline_command: LandLineCommand,
     ) -> SharedStateMessage {
-        SharedStateMessage::new(from, to, SharedStateType::LandLine { landline_type, landline_command })
+        SharedStateMessage::new(
+            from,
+            to,
+            SharedStateType::LandLine {
+                landline_type,
+                landline_command,
+            },
+        )
     }
 }
 

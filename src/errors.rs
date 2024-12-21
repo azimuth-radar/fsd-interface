@@ -71,7 +71,7 @@ pub enum FsdMessageParseError {
     #[error("{0} is not a valid IP addrees")]
     InvalidIPAddress(String),
     #[error("{0} is not a valid port")]
-    InvalidPort(String)
+    InvalidPort(String),
 }
 
 /// An error message received from the FSD server

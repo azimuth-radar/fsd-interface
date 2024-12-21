@@ -19,10 +19,10 @@ pub fn encode_pitch_bank_heading(pitch: f64, bank: f64, heading: f64, on_ground:
     ((p as u32) << 22) | ((b as u32) << 12) | ((h as u32) << 2) | ((on_ground as u32) << 1)
 }
 
-pub fn decode_pitch_bank_heading(input: u32) -> (f64, f64, f64, bool) {
-    let on_ground = (input & 2) == 1;
-
-    let mut input = input >> 2;
+pub fn decode_pitch_bank_heading(mut input: u32) -> (f64, f64, f64, bool) {
+    input >>= 1;
+    let on_ground = (input & 1) == 1;
+    input >>= 1;
     let mut heading = (input & 1023) as f64;
     input >>= 10;
     let mut bank = (input & 1023) as f64;

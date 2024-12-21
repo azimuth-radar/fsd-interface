@@ -170,7 +170,6 @@ impl FromStr for ProtocolRevision {
     }
 }
 
-
 #[derive(Debug, Clone, Copy)]
 pub enum SimulatorType {
     Unknown,
@@ -195,7 +194,7 @@ pub enum SimulatorType {
     P3Dv3,
     P3Dv4,
     P3Dv5,
-    FlightGear
+    FlightGear,
 }
 impl<S: AsRef<str>> From<S> for SimulatorType {
     fn from(value: S) -> Self {
@@ -380,7 +379,7 @@ impl FsdMessageType {
         if fields[0].starts_with("#AP") {
             return Ok(Self::PilotRegisterMessage(fields.as_slice().try_into()?));
         }
-        
+
         if fields[0].starts_with('%') {
             return Ok(Self::AtcPositionUpdateMessage(
                 fields.as_slice().try_into()?,
@@ -560,36 +559,83 @@ impl Display for FsdMessageType {
 #[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum ClientQueryType {
-    IsValidATC { atc_callsign: String },                                            //ATC
-    Capabilities,                                                                   //CAPS
-    Com1Freq,                                                                       //C?
-    RealName,                                                                       //RN
-    Server,                                                                         //SV
-    ATIS,                                                                           //ATIS
-    PublicIP,                                                                       //IP
-    INF,                                                                            //INF
-    FlightPlan { aircraft_callsign: String },                                       //FP
-    ForceBeaconCode { code: TransponderCode },                                      //IPC:W:852
-    RequestRelief,                                                                  //BY
-    CancelRequestRelief,                                                            //HI
-    HelpRequest { message: Option<String> },                                        //HLP
-    CancelHelpRequest {message: Option<String> },                                   //NOHLP
-    WhoHas { aircraft_callsign: String },                                           //WH
-    InitiateTrack { aircraft_callsign: String },                                    //IT
-    AcceptHandoff { aircraft_callsign: String, atc_callsign: String },              //HT
-    DropTrack { aircraft_callsign: String},                                         //DR
-    SetFinalAltitude { aircraft_callsign: String, altitude: u32 },                  //FA
-    SetTempAltitude { aircraft_callsign: String, altitude: u32 },                   //TA
-    SetBeaconCode { aircraft_callsign: String, code: TransponderCode },             //BC
-    SetScratchpad { aircraft_callsign: String, contents: ScratchPad },              //SC
-    SetVoiceType { aircraft_callsign: String, voice_capability: VoiceCapability },  //VT
-    AircraftConfigurationRequest,                                                   //ACC
-    AircraftConfigurationResponse { aircraft_config: AircraftConfig },              //ACC
-    SimTime { time: DateTime<Utc> },                                                //SIMTIME
-    NewInfo { atis_letter: char },                                                  //NEWINFO
-    NewATIS { atis_letter: char, surface_wind: String, pressure: String },          //NEWATIS
+    IsValidATC {
+        atc_callsign: String,
+    }, //ATC
+    Capabilities, //CAPS
+    Com1Freq,     //C?
+    RealName,     //RN
+    Server,       //SV
+    ATIS,         //ATIS
+    PublicIP,     //IP
+    INF,          //INF
+    FlightPlan {
+        aircraft_callsign: String,
+    }, //FP
+    ForceBeaconCode {
+        code: TransponderCode,
+    }, //IPC:W:852
+    RequestRelief, //BY
+    CancelRequestRelief, //HI
+    HelpRequest {
+        message: Option<String>,
+    }, //HLP
+    CancelHelpRequest {
+        message: Option<String>,
+    }, //NOHLP
+    WhoHas {
+        aircraft_callsign: String,
+    }, //WH
+    InitiateTrack {
+        aircraft_callsign: String,
+    }, //IT
+    AcceptHandoff {
+        aircraft_callsign: String,
+        atc_callsign: String,
+    }, //HT
+    DropTrack {
+        aircraft_callsign: String,
+    }, //DR
+    SetFinalAltitude {
+        aircraft_callsign: String,
+        altitude: u32,
+    }, //FA
+    SetTempAltitude {
+        aircraft_callsign: String,
+        altitude: u32,
+    }, //TA
+    SetBeaconCode {
+        aircraft_callsign: String,
+        code: TransponderCode,
+    }, //BC
+    SetScratchpad {
+        aircraft_callsign: String,
+        contents: ScratchPad,
+    }, //SC
+    SetVoiceType {
+        aircraft_callsign: String,
+        voice_capability: VoiceCapability,
+    }, //VT
+    AircraftConfigurationRequest, //ACC
+    AircraftConfigurationResponse {
+        aircraft_config: AircraftConfig,
+    }, //ACC
+    SimTime {
+        time: DateTime<Utc>,
+    }, //SIMTIME
+    NewInfo {
+        atis_letter: char,
+    }, //NEWINFO
+    NewATIS {
+        atis_letter: char,
+        surface_wind: String,
+        pressure: String,
+    }, //NEWATIS
     //Estimate,                                                                     //EST
-    SetGlobalData { aircraft_callsign: String, contents: String },                  //GD
+    SetGlobalData {
+        aircraft_callsign: String,
+        contents: String,
+    }, //GD
 }
 
 impl Display for ClientQueryType {
@@ -603,7 +649,9 @@ impl Display for ClientQueryType {
             ClientQueryType::ATIS => write!(f, "ATIS"),
             ClientQueryType::PublicIP => write!(f, "IP"),
             ClientQueryType::INF => write!(f, "INF"),
-            ClientQueryType::FlightPlan { aircraft_callsign } => write!(f, "FP:{}", aircraft_callsign),
+            ClientQueryType::FlightPlan { aircraft_callsign } => {
+                write!(f, "FP:{}", aircraft_callsign)
+            }
             ClientQueryType::RequestRelief => write!(f, "BY"),
             ClientQueryType::CancelRequestRelief => write!(f, "HI"),
             ClientQueryType::HelpRequest { message: None } => write!(f, "HLP"),
@@ -611,23 +659,45 @@ impl Display for ClientQueryType {
             ClientQueryType::CancelHelpRequest { message: None } => write!(f, "NOHLP"),
             ClientQueryType::CancelHelpRequest { message: Some(msg) } => write!(f, "NOHLP:{msg}"),
             ClientQueryType::WhoHas { aircraft_callsign } => write!(f, "WH:{}", aircraft_callsign),
-            ClientQueryType::InitiateTrack { aircraft_callsign } => write!(f, "IT:{}", aircraft_callsign),
-            ClientQueryType::AcceptHandoff { aircraft_callsign, atc_callsign } => {
+            ClientQueryType::InitiateTrack { aircraft_callsign } => {
+                write!(f, "IT:{}", aircraft_callsign)
+            }
+            ClientQueryType::AcceptHandoff {
+                aircraft_callsign,
+                atc_callsign,
+            } => {
                 write!(f, "HT:{}:{}", aircraft_callsign, atc_callsign)
             }
-            ClientQueryType::DropTrack { aircraft_callsign } => write!(f, "DR:{}", aircraft_callsign),
-            ClientQueryType::SetFinalAltitude { aircraft_callsign, altitude } => write!(f, "FA:{}:{}", aircraft_callsign, altitude),
-            ClientQueryType::SetTempAltitude { aircraft_callsign, altitude } => write!(f, "TA:{}:{}", aircraft_callsign, altitude),
-            ClientQueryType::SetBeaconCode { aircraft_callsign, code } => {
+            ClientQueryType::DropTrack { aircraft_callsign } => {
+                write!(f, "DR:{}", aircraft_callsign)
+            }
+            ClientQueryType::SetFinalAltitude {
+                aircraft_callsign,
+                altitude,
+            } => write!(f, "FA:{}:{}", aircraft_callsign, altitude),
+            ClientQueryType::SetTempAltitude {
+                aircraft_callsign,
+                altitude,
+            } => write!(f, "TA:{}:{}", aircraft_callsign, altitude),
+            ClientQueryType::SetBeaconCode {
+                aircraft_callsign,
+                code,
+            } => {
                 write!(f, "BC:{}:{}", aircraft_callsign, code)
             }
             ClientQueryType::ForceBeaconCode { code } => {
                 write!(f, "IPC:W:852:{}", code.as_bcd_format())
             }
-            ClientQueryType::SetScratchpad { aircraft_callsign, contents } => {
+            ClientQueryType::SetScratchpad {
+                aircraft_callsign,
+                contents,
+            } => {
                 write!(f, "SC:{}:{}", aircraft_callsign, contents)
             }
-            ClientQueryType::SetVoiceType { aircraft_callsign, voice_capability } => {
+            ClientQueryType::SetVoiceType {
+                aircraft_callsign,
+                voice_capability,
+            } => {
                 write!(f, "VT:{}:{}", aircraft_callsign, voice_capability)
             }
             ClientQueryType::AircraftConfigurationRequest => {
@@ -636,8 +706,16 @@ impl Display for ClientQueryType {
             ClientQueryType::AircraftConfigurationResponse { aircraft_config } => {
                 write!(f, "ACC:{}", aircraft_config)
             }
-            ClientQueryType::NewATIS { atis_letter, surface_wind, pressure } => {
-                write!(f, "NEWATIS:ATIS {}:  {} - {}", atis_letter, surface_wind, pressure)
+            ClientQueryType::NewATIS {
+                atis_letter,
+                surface_wind,
+                pressure,
+            } => {
+                write!(
+                    f,
+                    "NEWATIS:ATIS {}:  {} - {}",
+                    atis_letter, surface_wind, pressure
+                )
             }
             ClientQueryType::NewInfo { atis_letter } => {
                 write!(f, "NEWINFO:{}", atis_letter)
@@ -645,7 +723,10 @@ impl Display for ClientQueryType {
             ClientQueryType::SimTime { time } => {
                 write!(f, "SIMTIME:{}", time.format("Y%m%d%H%M%S"))
             }
-            ClientQueryType::SetGlobalData { aircraft_callsign, contents } => {
+            ClientQueryType::SetGlobalData {
+                aircraft_callsign,
+                contents,
+            } => {
                 write!(f, "GD:{}:{}", aircraft_callsign, contents)
             }
         }
@@ -675,13 +756,30 @@ impl Display for AtisLine {
 #[allow(unused)]
 #[derive(Clone, Debug)]
 pub enum ClientResponseType {
-    Com1Freq { frequency: RadioFrequency },
-    ATIS { atis_line: AtisLine },
-    RealName { name: String, sector_file: String, rating: u8 },
-    Capabilities { capabilities: HashSet<ClientCapability> },
-    PublicIP { ip_address: String },
-    Server { hostname_or_ip_address: String },
-    IsValidATC { atc_callsign: String, valid_atc: bool },
+    Com1Freq {
+        frequency: RadioFrequency,
+    },
+    ATIS {
+        atis_line: AtisLine,
+    },
+    RealName {
+        name: String,
+        sector_file: String,
+        rating: u8,
+    },
+    Capabilities {
+        capabilities: HashSet<ClientCapability>,
+    },
+    PublicIP {
+        ip_address: String,
+    },
+    Server {
+        hostname_or_ip_address: String,
+    },
+    IsValidATC {
+        atc_callsign: String,
+        valid_atc: bool,
+    },
 }
 impl Display for ClientResponseType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -690,7 +788,11 @@ impl Display for ClientResponseType {
                 write!(f, "C?:{}", frequency.to_human_readable_string())
             }
             ClientResponseType::ATIS { atis_line } => write!(f, "ATIS:{}", atis_line),
-            ClientResponseType::RealName { name, sector_file, rating } => {
+            ClientResponseType::RealName {
+                name,
+                sector_file,
+                rating,
+            } => {
                 write!(f, "RN:{}:{}:{}", name, sector_file, rating)
             }
             ClientResponseType::Capabilities { capabilities } => {
@@ -705,8 +807,13 @@ impl Display for ClientResponseType {
                 Ok(())
             }
             ClientResponseType::PublicIP { ip_address } => write!(f, "IP:{}", ip_address),
-            ClientResponseType::Server { hostname_or_ip_address } => write!(f, "SV:{}", hostname_or_ip_address),
-            ClientResponseType::IsValidATC { atc_callsign, valid_atc } => {
+            ClientResponseType::Server {
+                hostname_or_ip_address,
+            } => write!(f, "SV:{}", hostname_or_ip_address),
+            ClientResponseType::IsValidATC {
+                atc_callsign,
+                valid_atc,
+            } => {
                 let valid = if *valid_atc { 'Y' } else { 'N' };
                 write!(f, "ATC:{}:{}", valid, atc_callsign)
             }
@@ -720,18 +827,51 @@ pub enum SharedStateType {
     Version,
     ID,
     DI,
-    IHave { aircraft_callsign: String },
-    ScratchPad { aircraft_callsign: String, contents: ScratchPad },
-    TempAltitude { aircraft_callsign: String, altitude: u32 },
-    FinalAltitude { aircraft_callsign: String, altitude: u32 },
-    VoiceType { aircraft_callsign: String, voice_capability: VoiceCapability },
-    BeaconCode { aircraft_callsign: String, code: TransponderCode },
-    HandoffCancel { aircraft_callsign: String },
-    FlightStrip { aircraft_callsign: String, format: Option<i32>, contents: Option<Vec<String>> },
-    PushToDepartureList { aircraft_callsign: String },
-    PointOut { aircraft_callsign: String },
-    LandLine { landline_type: LandLineType, landline_command: LandLineCommand },
-    GlobalData { aircraft_callsign: String, contents: String },
+    IHave {
+        aircraft_callsign: String,
+    },
+    ScratchPad {
+        aircraft_callsign: String,
+        contents: ScratchPad,
+    },
+    TempAltitude {
+        aircraft_callsign: String,
+        altitude: u32,
+    },
+    FinalAltitude {
+        aircraft_callsign: String,
+        altitude: u32,
+    },
+    VoiceType {
+        aircraft_callsign: String,
+        voice_capability: VoiceCapability,
+    },
+    BeaconCode {
+        aircraft_callsign: String,
+        code: TransponderCode,
+    },
+    HandoffCancel {
+        aircraft_callsign: String,
+    },
+    FlightStrip {
+        aircraft_callsign: String,
+        format: Option<i32>,
+        contents: Option<Vec<String>>,
+    },
+    PushToDepartureList {
+        aircraft_callsign: String,
+    },
+    PointOut {
+        aircraft_callsign: String,
+    },
+    LandLine {
+        landline_type: LandLineType,
+        landline_command: LandLineCommand,
+    },
+    GlobalData {
+        aircraft_callsign: String,
+        contents: String,
+    },
 }
 
 impl Display for SharedStateType {
@@ -741,23 +881,48 @@ impl Display for SharedStateType {
             SharedStateType::ID => write!(f, "ID"),
             SharedStateType::DI => write!(f, "DI"),
             SharedStateType::IHave { aircraft_callsign } => write!(f, "IH:{}", aircraft_callsign),
-            SharedStateType::ScratchPad { aircraft_callsign, contents } => {
+            SharedStateType::ScratchPad {
+                aircraft_callsign,
+                contents,
+            } => {
                 write!(f, "SC:{}:{}", aircraft_callsign, contents)
             }
-            SharedStateType::TempAltitude { aircraft_callsign, altitude } => {
+            SharedStateType::TempAltitude {
+                aircraft_callsign,
+                altitude,
+            } => {
                 write!(f, "TA:{}:{}", aircraft_callsign, altitude)
             }
-            SharedStateType::FinalAltitude { aircraft_callsign, altitude } => {
+            SharedStateType::FinalAltitude {
+                aircraft_callsign,
+                altitude,
+            } => {
                 write!(f, "FA:{}:{}", aircraft_callsign, altitude)
             }
-            SharedStateType::VoiceType { aircraft_callsign, voice_capability } => {
+            SharedStateType::VoiceType {
+                aircraft_callsign,
+                voice_capability,
+            } => {
                 write!(f, "VT:{}:{}", aircraft_callsign, voice_capability)
             }
-            SharedStateType::BeaconCode { aircraft_callsign, code } => write!(f, "BC:{}:{}", aircraft_callsign, code),
-            SharedStateType::HandoffCancel { aircraft_callsign } => write!(f, "HC:{}", aircraft_callsign),
-            SharedStateType::PointOut { aircraft_callsign } => write!(f, "PT:{}", aircraft_callsign),
-            SharedStateType::PushToDepartureList { aircraft_callsign } => write!(f, "DP:{}", aircraft_callsign),
-            SharedStateType::FlightStrip { aircraft_callsign, format, contents } => {
+            SharedStateType::BeaconCode {
+                aircraft_callsign,
+                code,
+            } => write!(f, "BC:{}:{}", aircraft_callsign, code),
+            SharedStateType::HandoffCancel { aircraft_callsign } => {
+                write!(f, "HC:{}", aircraft_callsign)
+            }
+            SharedStateType::PointOut { aircraft_callsign } => {
+                write!(f, "PT:{}", aircraft_callsign)
+            }
+            SharedStateType::PushToDepartureList { aircraft_callsign } => {
+                write!(f, "DP:{}", aircraft_callsign)
+            }
+            SharedStateType::FlightStrip {
+                aircraft_callsign,
+                format,
+                contents,
+            } => {
                 write!(f, "ST:{aircraft_callsign}")?;
                 if let Some(format) = *format {
                     write!(f, ":{format}")?;
@@ -768,44 +933,59 @@ impl Display for SharedStateType {
                     }
                 }
                 Ok(())
-            },
-            SharedStateType::LandLine { landline_type, landline_command } => {
-                match (*landline_type, *landline_command) {
-                    (LandLineType::Intercom, LandLineCommand::Request { ip_address, port }) => write!(f, "IC:{ip_address}:{port}"),
-                    (LandLineType::Intercom, LandLineCommand::Approve { ip_address, port }) => write!(f, "IK:{ip_address}:{port}"),
-                    (LandLineType::Intercom, LandLineCommand::Reject) => write!(f, "IB"),
-                    (LandLineType::Intercom, LandLineCommand::End) => write!(f, "EC"),
-
-                    (LandLineType::Override, LandLineCommand::Request { ip_address, port }) => write!(f, "OV:{ip_address}:{port}"),
-                    (LandLineType::Override, LandLineCommand::Approve { ip_address, port }) => write!(f, "OK:{ip_address}:{port}"),
-                    (LandLineType::Override, LandLineCommand::Reject) => write!(f, "OB"),
-                    (LandLineType::Override, LandLineCommand::End) => write!(f, "EO"),
-
-                    (LandLineType::Monitor, LandLineCommand::Request { ip_address, port }) => write!(f, "MN:{ip_address}:{port}"),
-                    (LandLineType::Monitor, LandLineCommand::Approve { ip_address, port }) => write!(f, "MK:{ip_address}:{port}"),
-                    (LandLineType::Monitor, LandLineCommand::Reject) => write!(f, "MB"),
-                    (LandLineType::Monitor, LandLineCommand::End) => write!(f, "EM"),
+            }
+            SharedStateType::LandLine {
+                landline_type,
+                landline_command,
+            } => match (*landline_type, *landline_command) {
+                (LandLineType::Intercom, LandLineCommand::Request { ip_address, port }) => {
+                    write!(f, "IC:{ip_address}:{port}")
                 }
+                (LandLineType::Intercom, LandLineCommand::Approve { ip_address, port }) => {
+                    write!(f, "IK:{ip_address}:{port}")
+                }
+                (LandLineType::Intercom, LandLineCommand::Reject) => write!(f, "IB"),
+                (LandLineType::Intercom, LandLineCommand::End) => write!(f, "EC"),
+
+                (LandLineType::Override, LandLineCommand::Request { ip_address, port }) => {
+                    write!(f, "OV:{ip_address}:{port}")
+                }
+                (LandLineType::Override, LandLineCommand::Approve { ip_address, port }) => {
+                    write!(f, "OK:{ip_address}:{port}")
+                }
+                (LandLineType::Override, LandLineCommand::Reject) => write!(f, "OB"),
+                (LandLineType::Override, LandLineCommand::End) => write!(f, "EO"),
+
+                (LandLineType::Monitor, LandLineCommand::Request { ip_address, port }) => {
+                    write!(f, "MN:{ip_address}:{port}")
+                }
+                (LandLineType::Monitor, LandLineCommand::Approve { ip_address, port }) => {
+                    write!(f, "MK:{ip_address}:{port}")
+                }
+                (LandLineType::Monitor, LandLineCommand::Reject) => write!(f, "MB"),
+                (LandLineType::Monitor, LandLineCommand::End) => write!(f, "EM"),
             },
-            SharedStateType::GlobalData { aircraft_callsign, contents } => write!(f, "GD:{aircraft_callsign}:{contents}")
+            SharedStateType::GlobalData {
+                aircraft_callsign,
+                contents,
+            } => write!(f, "GD:{aircraft_callsign}:{contents}"),
         }
     }
 }
-
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LandLineType {
     Intercom,
     Override,
-    Monitor
+    Monitor,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
 pub enum LandLineCommand {
-    Request  { ip_address: Ipv4Addr, port: u16 },
+    Request { ip_address: Ipv4Addr, port: u16 },
     Approve { ip_address: Ipv4Addr, port: u16 },
     Reject,
-    End
+    End,
 }
 
 #[derive(Debug, Clone, Copy)]
