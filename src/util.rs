@@ -85,14 +85,14 @@ pub(crate) fn group_frequencies_with_symbol(frequencies: &[RadioFrequency]) -> S
     freqs_string
 }
 
-pub(crate) fn parse_altitude(input: &str) -> Result<u32, FsdMessageParseError> {
+pub(crate) fn parse_altitude(input: &str) -> Result<i32, FsdMessageParseError> {
     if input.is_empty() {
         Ok(0)
     } else {
         let flight_level = input.to_uppercase().starts_with("FL");
         let input_trimmed = if flight_level { &input[2..] } else { input };
 
-        let mut as_num: u32 = input_trimmed
+        let mut as_num: i32 = input_trimmed
             .parse()
             .map_err(|_| FsdMessageParseError::InvalidAltitude(input.to_string()))?;
         if flight_level {

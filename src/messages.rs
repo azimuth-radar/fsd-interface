@@ -2143,7 +2143,7 @@ impl ClientQueryMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        altitude: u32,
+        altitude: i32,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
@@ -2158,7 +2158,7 @@ impl ClientQueryMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        altitude: u32,
+        altitude: i32,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
@@ -2765,7 +2765,7 @@ impl SharedStateMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        altitude: u32,
+        altitude: i32,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,

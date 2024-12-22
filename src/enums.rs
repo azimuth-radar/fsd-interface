@@ -598,11 +598,11 @@ pub enum ClientQueryType {
     }, //DR
     SetFinalAltitude {
         aircraft_callsign: String,
-        altitude: u32,
+        altitude: i32,
     }, //FA
     SetTempAltitude {
         aircraft_callsign: String,
-        altitude: u32,
+        altitude: i32,
     }, //TA
     SetBeaconCode {
         aircraft_callsign: String,
@@ -836,11 +836,11 @@ pub enum SharedStateType {
     },
     TempAltitude {
         aircraft_callsign: String,
-        altitude: u32,
+        altitude: i32,
     },
     FinalAltitude {
         aircraft_callsign: String,
-        altitude: u32,
+        altitude: i32,
     },
     VoiceType {
         aircraft_callsign: String,

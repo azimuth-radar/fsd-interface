@@ -343,7 +343,7 @@ impl TryFrom<&[&str]> for FlightPlan {
             fields[3],
             etd,
             atd,
-            parse_altitude(fields[6])?,
+            parse_altitude(fields[6])? as u32,
             fields[7],
             hours_enroute,
             mins_enroute,
