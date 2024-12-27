@@ -2428,7 +2428,7 @@ impl ClientQueryResponseMessage {
     pub fn capabilities(
         from: impl AsRef<str>,
         to: impl AsRef<str>,
-        capabilities: impl Into<HashSet<ClientCapability>>,
+        capabilities: impl Into<Vec<ClientCapability>>,
     ) -> ClientQueryResponseMessage {
         ClientQueryResponseMessage::new(
             from,
@@ -2448,6 +2448,19 @@ impl ClientQueryResponseMessage {
             to,
             ClientResponseType::PublicIP {
                 ip_address: ip_address.into(),
+            },
+        )
+    }
+    pub fn server(
+        from: impl AsRef<str>,
+        to: impl AsRef<str>,
+        hostname_or_ip_address: impl Into<String>,
+    ) -> ClientQueryResponseMessage {
+        ClientQueryResponseMessage::new(
+            from,
+            to,
+            ClientResponseType::Server {
+                hostname_or_ip_address: hostname_or_ip_address.into()
             },
         )
     }

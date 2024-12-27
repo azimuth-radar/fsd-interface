@@ -151,8 +151,8 @@ pub(crate) fn assemble_with_colons(slice: &[&str]) -> String {
     buffer
 }
 
-pub fn read_capabilities(caps_str: &[&str]) -> HashSet<ClientCapability> {
-    let mut capabilities: HashSet<ClientCapability> = HashSet::with_capacity(caps_str.len() / 2);
+pub fn read_capabilities(caps_str: &[&str]) -> Vec<ClientCapability> {
+    let mut capabilities: Vec<ClientCapability> = Vec::with_capacity(caps_str.len() / 2);
     if caps_str.is_empty() {
         return capabilities;
     }
@@ -171,7 +171,7 @@ pub fn read_capabilities(caps_str: &[&str]) -> HashSet<ClientCapability> {
 
         if let Ok(capability) = k.to_uppercase().as_str().parse() {
             if v == "1" {
-                capabilities.insert(capability);
+                capabilities.push(capability);
             }
         }
     }

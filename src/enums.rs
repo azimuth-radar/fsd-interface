@@ -768,7 +768,7 @@ pub enum ClientResponseType {
         rating: u8,
     },
     Capabilities {
-        capabilities: HashSet<ClientCapability>,
+        capabilities: Vec<ClientCapability>,
     },
     PublicIP {
         ip_address: String,
