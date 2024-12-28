@@ -343,8 +343,8 @@ pub enum FsdMessageType {
     FsdErrorMessage(FsdErrorMessage),
     FlightPlanMessage(FlightPlanMessage),
     FlightPlanAmendmentMessage(FlightPlanAmendmentMessage),
-    FSInnPlaneInformationRequestMessage,
-    FSInnPlaneInformationResponseMessage,
+    FSInnPlaneInformationRequestMessage,  // Deprecated
+    FSInnPlaneInformationResponseMessage, // Deprecated
     ServerHeartbeat,
     ClientQueryMessage(ClientQueryMessage),
     ClientQueryResponseMessage(ClientQueryResponseMessage),

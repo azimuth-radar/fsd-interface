@@ -1489,6 +1489,9 @@ impl TryFrom<&[&str]> for PlaneInfoResponseMessage {
     fn try_from(fields: &[&str]) -> Result<Self, Self::Error> {
         check_min_num_fields!(fields, 5);
         let first = &fields[0][3..];
+        if fields[3] != "GEN" {
+            return Err(FsdMessageParseError::UnknownMessageType(fields.join(":")));
+        }
 
         Ok(PlaneInfoResponseMessage::new(
             first,
@@ -2724,7 +2727,9 @@ impl SharedStateMessage {
             shared_state_type,
         }
     }
-
+    pub fn version(from: impl AsRef<str>, to: impl AsRef<str>) -> SharedStateMessage {
+        SharedStateMessage::new(from, to, SharedStateType::Version)
+    }
     pub fn id(from: impl AsRef<str>, to: impl AsRef<str>) -> SharedStateMessage {
         SharedStateMessage::new(from, to, SharedStateType::ID)
     }

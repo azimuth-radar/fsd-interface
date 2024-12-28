@@ -90,6 +90,7 @@ mod structs;
 mod util;
 
 pub use aircraft_config::*;
+pub use chrono::{DateTime, Utc};
 pub use enums::*;
 pub use structs::*;
 
@@ -104,3 +105,4 @@ pub fn parse_message(
 ) -> Result<FsdMessageType, errors::FsdMessageParseError> {
     FsdMessageType::identify(message.as_ref())
 }
+

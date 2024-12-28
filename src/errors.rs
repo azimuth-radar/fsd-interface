@@ -135,24 +135,28 @@ pub enum FsdError {
 impl FsdError {
     pub fn error_number(&self) -> u8 {
         match *self {
-            FsdError::CallsignInUse => 1,
-            FsdError::InvalidCallsign => 2,
-            FsdError::AlreadyRegistered => 3,
+            FsdError::CallsignInUse => 1, // Fatal
+            FsdError::InvalidCallsign => 2, // Fatal
+            FsdError::AlreadyRegistered => 3, // Fatal
             FsdError::SyntaxError => 4,
             FsdError::InvalidSourceCallsign => 5,
-            FsdError::InvalidCidPassword => 6,
+            FsdError::InvalidCidPassword => 6, // Fatal
             FsdError::NoSuchCallsign(_) => 7,
             FsdError::NoFlightPlan(_) => 8,
             FsdError::NoWeatherProfile(_) => 9,
-            FsdError::InvalidProtocolRevision => 10,
-            FsdError::RequestedLevelTooHigh => 11,
-            FsdError::ServerFull => 12,
-            FsdError::CertificateSuspended => 13,
+            FsdError::InvalidProtocolRevision => 10, // Fatal
+            FsdError::RequestedLevelTooHigh => 11, // Fatal
+            FsdError::ServerFull => 12, // Fatal
+            FsdError::CertificateSuspended => 13, // Fatal
             FsdError::InvalidControl => 14,
-            FsdError::InvalidPositionForRating => 15,
-            FsdError::UnauthorisedClient => 16,
-            FsdError::AuthTimeOut => 17,
+            FsdError::InvalidPositionForRating => 15, // Fatal
+            FsdError::UnauthorisedClient => 16, // Fatal
+            FsdError::AuthTimeOut => 17, // Fatal
             FsdError::Other(_) => 18,
         }
+    }
+    pub fn is_fatal(&self) -> bool {
+        const FATAL_ERRORS: [u8; 11] = [1, 2, 3, 6, 10, 11, 12, 13, 15, 16, 17];
+        FATAL_ERRORS.contains(&self.error_number())
     }
 }
