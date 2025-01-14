@@ -34,6 +34,8 @@ pub enum FsdMessageParseError {
     InvalidAircraftConfig(String),
     #[error("{0} is not a valid pitch / bank / heading number")]
     InvalidPitchBankHeading(String),
+    #[error("{0} is not a valid level")]
+    InvalidLevel(String),
     #[error("{0} is not a valid altitude")]
     InvalidAltitude(String),
     #[error("{0} is not a valid altitude difference")]
@@ -135,8 +137,8 @@ pub enum FsdError {
 impl FsdError {
     pub fn error_number(&self) -> u8 {
         match *self {
-            FsdError::CallsignInUse => 1, // Fatal
-            FsdError::InvalidCallsign => 2, // Fatal
+            FsdError::CallsignInUse => 1,     // Fatal
+            FsdError::InvalidCallsign => 2,   // Fatal
             FsdError::AlreadyRegistered => 3, // Fatal
             FsdError::SyntaxError => 4,
             FsdError::InvalidSourceCallsign => 5,
@@ -145,13 +147,13 @@ impl FsdError {
             FsdError::NoFlightPlan(_) => 8,
             FsdError::NoWeatherProfile(_) => 9,
             FsdError::InvalidProtocolRevision => 10, // Fatal
-            FsdError::RequestedLevelTooHigh => 11, // Fatal
-            FsdError::ServerFull => 12, // Fatal
-            FsdError::CertificateSuspended => 13, // Fatal
+            FsdError::RequestedLevelTooHigh => 11,   // Fatal
+            FsdError::ServerFull => 12,              // Fatal
+            FsdError::CertificateSuspended => 13,    // Fatal
             FsdError::InvalidControl => 14,
             FsdError::InvalidPositionForRating => 15, // Fatal
-            FsdError::UnauthorisedClient => 16, // Fatal
-            FsdError::AuthTimeOut => 17, // Fatal
+            FsdError::UnauthorisedClient => 16,       // Fatal
+            FsdError::AuthTimeOut => 17,              // Fatal
             FsdError::Other(_) => 18,
         }
     }

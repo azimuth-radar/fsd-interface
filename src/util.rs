@@ -1,5 +1,5 @@
 use crate::{enums::ClientCapability, errors::FsdMessageParseError, structs::RadioFrequency};
-use std::{collections::HashSet, str::FromStr};
+use std::str::FromStr;
 
 pub fn encode_pitch_bank_heading(pitch: f64, bank: f64, heading: f64, on_ground: bool) -> u32 {
     let mut p = pitch / -360.0;
@@ -83,23 +83,6 @@ pub(crate) fn group_frequencies_with_symbol(frequencies: &[RadioFrequency]) -> S
         }
     }
     freqs_string
-}
-
-pub(crate) fn parse_altitude(input: &str) -> Result<i32, FsdMessageParseError> {
-    if input.is_empty() {
-        Ok(0)
-    } else {
-        let flight_level = input.to_uppercase().starts_with("FL");
-        let input_trimmed = if flight_level { &input[2..] } else { input };
-
-        let mut as_num: i32 = input_trimmed
-            .parse()
-            .map_err(|_| FsdMessageParseError::InvalidAltitude(input.to_string()))?;
-        if flight_level {
-            as_num *= 100;
-        }
-        Ok(as_num)
-    }
 }
 
 // $CQEGCC_ATIS:@94835:NEWATIS:ATIS B:  31016KT Q1022

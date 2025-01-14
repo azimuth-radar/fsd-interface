@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{enums::FlightRules, errors::FsdMessageParseError, util::parse_altitude};
+use crate::{enums::FlightRules, errors::FsdMessageParseError, Level};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TransponderCode(u16);
@@ -236,7 +236,7 @@ pub struct FlightPlan {
     pub origin: String,
     pub etd: u16,
     pub atd: u16,
-    pub cruise_level: u32,
+    pub cruise_level: Level,
     pub destination: String,
     pub hours_enroute: u8,
     pub mins_enroute: u8,
@@ -343,7 +343,7 @@ impl TryFrom<&[&str]> for FlightPlan {
             fields[3],
             etd,
             atd,
-            parse_altitude(fields[6])? as u32,
+            fields[6].parse()?,
             fields[7],
             hours_enroute,
             mins_enroute,
@@ -364,7 +364,7 @@ impl FlightPlan {
         origin: impl AsRef<str>,
         etd: u16,
         atd: u16,
-        cruise_level: u32,
+        cruise_level: Level,
         destination: impl AsRef<str>,
         hours_enroute: u8,
         mins_enroute: u8,

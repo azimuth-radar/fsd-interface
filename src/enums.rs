@@ -1,4 +1,3 @@
-use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::{fmt::Display, str::FromStr};
 
@@ -598,11 +597,11 @@ pub enum ClientQueryType {
     }, //DR
     SetFinalAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     }, //FA
     SetTempAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     }, //TA
     SetBeaconCode {
         aircraft_callsign: String,
@@ -673,12 +672,12 @@ impl Display for ClientQueryType {
             }
             ClientQueryType::SetFinalAltitude {
                 aircraft_callsign,
-                altitude,
-            } => write!(f, "FA:{}:{}", aircraft_callsign, altitude),
+                level,
+            } => write!(f, "FA:{}:{}", aircraft_callsign, level),
             ClientQueryType::SetTempAltitude {
                 aircraft_callsign,
-                altitude,
-            } => write!(f, "TA:{}:{}", aircraft_callsign, altitude),
+                level,
+            } => write!(f, "TA:{}:{}", aircraft_callsign, level),
             ClientQueryType::SetBeaconCode {
                 aircraft_callsign,
                 code,
@@ -836,11 +835,11 @@ pub enum SharedStateType {
     },
     TempAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     },
     FinalAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     },
     VoiceType {
         aircraft_callsign: String,
@@ -889,15 +888,15 @@ impl Display for SharedStateType {
             }
             SharedStateType::TempAltitude {
                 aircraft_callsign,
-                altitude,
+                level,
             } => {
-                write!(f, "TA:{}:{}", aircraft_callsign, altitude)
+                write!(f, "TA:{}:{}", aircraft_callsign, level)
             }
             SharedStateType::FinalAltitude {
                 aircraft_callsign,
-                altitude,
+                level,
             } => {
-                write!(f, "FA:{}:{}", aircraft_callsign, altitude)
+                write!(f, "FA:{}:{}", aircraft_callsign, level)
             }
             SharedStateType::VoiceType {
                 aircraft_callsign,
@@ -1157,6 +1156,51 @@ impl Display for VoiceCapability {
             VoiceCapability::Voice => write!(f, "v"),
             VoiceCapability::Text => write!(f, "t"),
             VoiceCapability::Receive => write!(f, "r"),
+        }
+    }
+}
+
+/// Type used for CFL (TA in FSD) and RFL (FA in FSD) to represent the
+/// filed or cleared flight level, altitude or special VFR keyword
+///
+/// Currently no difference in behaviour for Altitude vs FL, needs testing of other clients
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Level {
+    // Used for example when filing with the "VFR" keyword
+    VFR,
+    // Flight Level in feet
+    FlightLevel(i32),
+    // Altitude in feet
+    Altitude(i32),
+}
+impl FromStr for Level {
+    type Err = FsdMessageParseError;
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        if input.is_empty() {
+            Ok(Self::FlightLevel(0))
+        } else if input == "VFR" {
+            Ok(Self::VFR)
+        } else {
+            let flight_level = input.to_uppercase().starts_with("FL");
+            let input_trimmed = if flight_level { &input[2..] } else { input };
+
+            let as_num: i32 = input_trimmed
+                .parse()
+                .map_err(|_| FsdMessageParseError::InvalidLevel(input.to_string()))?;
+            Ok(if flight_level {
+                Self::FlightLevel(as_num * 100)
+            } else {
+                Self::FlightLevel(as_num)
+            })
+        }
+    }
+}
+impl Display for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Level::VFR => f.write_str("VFR"),
+            Level::FlightLevel(fl) => f.write_fmt(format_args!("{fl:.0}")),
+            Level::Altitude(a) => f.write_fmt(format_args!("{a:.0}")),
         }
     }
 }
