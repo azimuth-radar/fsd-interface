@@ -1127,7 +1127,7 @@ impl Display for ScratchPad {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VoiceCapability {
     Unknown,
     Voice,
