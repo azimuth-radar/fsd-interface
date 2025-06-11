@@ -1049,6 +1049,7 @@ pub enum ScratchPad {
     ClearanceReceived,
     ClearanceCancelled,
     GroundState(GroundState),
+    MissedApproach,
 }
 impl FromStr for ScratchPad {
     type Err = FsdMessageParseError;
@@ -1102,6 +1103,7 @@ impl FromStr for ScratchPad {
             "PARK" => Ok(Self::GroundState(GroundState::OnBlock)),
             "CLEA" => Ok(Self::ClearanceReceived),
             "NOTC" => Ok(Self::ClearanceCancelled),
+            "MISAP_" => Ok(Self::MissedApproach),
             text => Ok(ScratchPad::PlainTextOrDirect(text.to_string())),
         }
     }
@@ -1123,6 +1125,7 @@ impl Display for ScratchPad {
             Self::GroundState(gs) => gs.fmt(f),
             Self::ClearanceReceived => write!(f, "CLEA"),
             Self::ClearanceCancelled => write!(f, "NOTC"),
+            Self::MissedApproach => write!(f, "MISAP_"),
         }
     }
 }
