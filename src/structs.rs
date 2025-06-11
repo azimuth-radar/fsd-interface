@@ -72,9 +72,9 @@ impl RadioFrequency {
     ///
     /// # Example
     /// ```
-    /// use fsd_messages::util::RadioFrequency;
+    /// use fsd_interface::RadioFrequency;
     /// let freq = RadioFrequency::new(118, 300).unwrap();
-    /// assert_eq!(RadioFrequency(118, 300), freq);
+    /// assert_eq!((118, 300), freq.frequency());
     /// ```
     pub fn new(left: u16, right: u16) -> Result<RadioFrequency, FsdMessageParseError> {
         if !((118..=137).contains(&left)
@@ -97,7 +97,7 @@ impl RadioFrequency {
     ///
     /// # Example
     /// ```
-    /// use fsd_messages::util::RadioFrequency;
+    /// use fsd_interface::RadioFrequency;
     /// let freq = RadioFrequency::new(133, 175).unwrap();
     /// let human_readable = freq.to_human_readable_string();
     /// assert_eq!(human_readable, String::from("133.175"));
