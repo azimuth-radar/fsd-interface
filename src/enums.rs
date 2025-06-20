@@ -1019,8 +1019,9 @@ impl Display for Operator {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default, Component, PartialEq, Eq)]
 pub enum GroundState {
+    #[default]
     NoState,
     OnFrequency,
     DeIcing,
