@@ -285,6 +285,22 @@ impl FromStr for AtcType {
     }
 }
 
+impl Display for AtcType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AtcType::Observer => f.write_str("Observer"),
+            AtcType::FlightServiceStation => {
+                f.write_str("Flight Service Station or Flow Management")
+            }
+            AtcType::Delivery => f.write_str("Delivery"),
+            AtcType::Ground => f.write_str("Ground, Ramp or Apron"),
+            AtcType::Tower => f.write_str("Tower"),
+            AtcType::Approach => f.write_str("Approach or Departure"),
+            AtcType::Centre => f.write_str("Centre"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub enum TransponderMode {
     Standby,
