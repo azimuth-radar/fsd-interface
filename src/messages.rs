@@ -255,7 +255,7 @@ impl PilotDeregisterMessage {
 }
 
 /// Sent at regular intervals by an ATC client to update the server with its position
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AtcPositionUpdateMessage {
     pub callsign: String,
     pub frequencies: Vec<RadioFrequency>,
