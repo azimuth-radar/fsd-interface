@@ -30,6 +30,11 @@ pub enum ClientCapability {
     ObsPilot,
     Unknown(String),
 }
+impl ClientCapability {
+    pub fn is_known(&self) -> bool {
+        return !matches!(self, ClientCapability::Unknown(_));
+    }
+}
 impl<S: AsRef<str>> From<S> for ClientCapability {
     fn from(value: S) -> Self {
         let value = value.as_ref().to_uppercase();
