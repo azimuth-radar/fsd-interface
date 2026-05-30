@@ -23,6 +23,7 @@ pub enum ClientCapability {
     Stealth,
     Teamspeak,
     NewATIS,
+    NewInfo,
     Mumble,
     GlobalData,
     Simulated,
@@ -47,6 +48,7 @@ impl FromStr for ClientCapability {
             "STEALTH" => Ok(ClientCapability::Stealth),
             "TEAMSPEAK" => Ok(ClientCapability::Teamspeak),
             "NEWATIS" => Ok(ClientCapability::NewATIS),
+            "NEWINFO" => Ok(ClientCapability::NewInfo),
             "MUMBLE" => Ok(ClientCapability::Mumble),
             "GLOBALDATA" => Ok(ClientCapability::GlobalData),
             "SIMULATED" => Ok(ClientCapability::Simulated),
@@ -73,6 +75,7 @@ impl Display for ClientCapability {
             ClientCapability::Stealth => write!(f, "STEALTH"),
             ClientCapability::Teamspeak => write!(f, "TEAMSPEAK"),
             ClientCapability::NewATIS => write!(f, "NEWATIS"),
+            ClientCapability::NewInfo => write!(f, "NEWINFO"),
             ClientCapability::Mumble => write!(f, "MUMBLE"),
             ClientCapability::GlobalData => write!(f, "GLOBALDATA"),
             ClientCapability::Simulated => write!(f, "SIMULATED"),
@@ -1019,7 +1022,7 @@ impl Display for Operator {
     }
 }
 
-#[derive(Debug, Copy, Clone, Default, Component, PartialEq, Eq)]
+#[derive(Debug, Copy, Clone, Default, PartialEq, Eq)]
 pub enum GroundState {
     #[default]
     NoState,
