@@ -152,10 +152,8 @@ pub fn read_capabilities(caps_str: &[&str]) -> Vec<ClientCapability> {
             None => continue,
         };
 
-        if let Ok(capability) = k.to_uppercase().as_str().parse() {
-            if v == "1" {
-                capabilities.push(capability);
-            }
+        if v == "1" {
+            capabilities.push(ClientCapability::from(k));
         }
     }
     capabilities

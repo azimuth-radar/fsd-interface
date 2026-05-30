@@ -6,7 +6,7 @@ use crate::structs::{RadioFrequency, TransponderCode};
 use crate::{aircraft_config::AircraftConfig, errors::FsdMessageParseError};
 use chrono::{DateTime, Utc};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum ClientCapability {
     Version,
     ATCInfo,
@@ -28,38 +28,40 @@ pub enum ClientCapability {
     GlobalData,
     Simulated,
     ObsPilot,
+    Unknown(String),
 }
-impl FromStr for ClientCapability {
-    type Err = FsdMessageParseError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s.to_uppercase().as_str() {
-            "VERSION" => Ok(ClientCapability::Version),
-            "ATCINFO" => Ok(ClientCapability::ATCInfo),
-            "MODELDESC" => Ok(ClientCapability::ModelDesc),
-            "ACCONFIG" => Ok(ClientCapability::ACConfig),
-            "VISUPDATE" => Ok(ClientCapability::VisUpdate),
-            "RADARUPDATE" => Ok(ClientCapability::RadarUpdate),
-            "ATCMULTI" => Ok(ClientCapability::ATCMulti),
-            "SECPOS" => Ok(ClientCapability::SecPos),
-            "ICAOEQ" => Ok(ClientCapability::IcaoEq),
-            "FASTPOS" => Ok(ClientCapability::FastPos),
-            "ONGOINGCOORD" => Ok(ClientCapability::OngoingCoord),
-            "INTERIMPOS" => Ok(ClientCapability::InterimPos),
-            "STEALTH" => Ok(ClientCapability::Stealth),
-            "TEAMSPEAK" => Ok(ClientCapability::Teamspeak),
-            "NEWATIS" => Ok(ClientCapability::NewATIS),
-            "NEWINFO" => Ok(ClientCapability::NewInfo),
-            "MUMBLE" => Ok(ClientCapability::Mumble),
-            "GLOBALDATA" => Ok(ClientCapability::GlobalData),
-            "SIMULATED" => Ok(ClientCapability::Simulated),
-            "OBSPILOT" => Ok(ClientCapability::ObsPilot),
-            _ => Err(FsdMessageParseError::InvalidClientCapability(s.to_string())),
+impl<S: AsRef<str>> From<S> for ClientCapability {
+    fn from(value: S) -> Self {
+        let value = value.as_ref().to_uppercase();
+        match value.as_str() {
+            "VERSION" => ClientCapability::Version,
+            "ATCINFO" => ClientCapability::ATCInfo,
+            "MODELDESC" => ClientCapability::ModelDesc,
+            "ACCONFIG" => ClientCapability::ACConfig,
+            "VISUPDATE" => ClientCapability::VisUpdate,
+            "RADARUPDATE" => ClientCapability::RadarUpdate,
+            "ATCMULTI" => ClientCapability::ATCMulti,
+            "SECPOS" => ClientCapability::SecPos,
+            "ICAOEQ" => ClientCapability::IcaoEq,
+            "FASTPOS" => ClientCapability::FastPos,
+            "ONGOINGCOORD" => ClientCapability::OngoingCoord,
+            "INTERIMPOS" => ClientCapability::InterimPos,
+            "STEALTH" => ClientCapability::Stealth,
+            "TEAMSPEAK" => ClientCapability::Teamspeak,
+            "NEWATIS" => ClientCapability::NewATIS,
+            "NEWINFO" => ClientCapability::NewInfo,
+            "MUMBLE" => ClientCapability::Mumble,
+            "GLOBALDATA" => ClientCapability::GlobalData,
+            "SIMULATED" => ClientCapability::Simulated,
+            "OBSPILOT" => ClientCapability::ObsPilot,
+            _ => ClientCapability::Unknown(value),
         }
     }
 }
+
 impl Display for ClientCapability {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match *self {
+        match self {
             ClientCapability::ACConfig => write!(f, "ACCONFIG"),
             ClientCapability::ATCInfo => write!(f, "ATCINFO"),
             ClientCapability::ModelDesc => write!(f, "MODELDESC"),
@@ -80,6 +82,7 @@ impl Display for ClientCapability {
             ClientCapability::GlobalData => write!(f, "GLOBALDATA"),
             ClientCapability::Simulated => write!(f, "SIMULATED"),
             ClientCapability::ObsPilot => write!(f, "OBSPILOT"),
+            ClientCapability::Unknown(value) => write!(f, "{value}"),
         }
     }
 }
