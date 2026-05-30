@@ -1158,32 +1158,27 @@ impl Display for ScratchPad {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum VoiceCapability {
-    Unknown,
+    #[default]
     Voice,
     Text,
     Receive,
 }
-impl FromStr for VoiceCapability {
-    type Err = FsdMessageParseError;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s.is_empty() {
-            return Ok(VoiceCapability::Unknown);
-        }
-        let s = s.to_lowercase();
-        match s.as_str() {
-            "v" => Ok(VoiceCapability::Voice),
-            "t" => Ok(VoiceCapability::Text),
-            "r" => Ok(VoiceCapability::Receive),
-            _ => Err(FsdMessageParseError::InvalidVoiceCapability(s)),
+impl<S: AsRef<str>> From<S> for VoiceCapability {
+    fn from(value: S) -> Self {
+        let value = value.as_ref();
+        match value.to_lowercase().as_str() {
+            "t" => VoiceCapability::Text,
+            "r" => VoiceCapability::Receive,
+            _ => VoiceCapability::default()
         }
     }
 }
+
 impl Display for VoiceCapability {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            VoiceCapability::Unknown => write!(f, ""),
             VoiceCapability::Voice => write!(f, "v"),
             VoiceCapability::Text => write!(f, "t"),
             VoiceCapability::Receive => write!(f, "r"),

@@ -21,6 +21,7 @@ use crate::{
 pub const SERVER_CALLSIGN: &str = "SERVER";
 pub const ATC_TEXT_CHANNEL_FREQUENCY: RadioFrequency = RadioFrequency(149, 999);
 pub const AIRCRAFT_HANDLER_RECIPIENT: &str = "@94835";
+pub const FLIGHT_PLAN_HANDLER_RECIPIENT: &str = "FP";
 
 macro_rules! check_min_num_fields {
     ($fields: ident, $i: literal) => {
@@ -1894,7 +1895,7 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
                     fields[1],
                     ClientQueryType::SetVoiceType {
                         aircraft_callsign: fields[3].to_uppercase(),
-                        voice_capability: fields[4].parse()?,
+                        voice_capability: fields[4].into(),
                     },
                 ))
             }
@@ -2586,7 +2587,7 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             }
             "VT" => {
                 check_min_num_fields!(fields, 6);
-                let voice_capability: VoiceCapability = fields[5].parse()?;
+                let voice_capability: VoiceCapability = fields[5].into();
                 SharedStateType::VoiceType {
                     aircraft_callsign: fields[4].to_uppercase(),
                     voice_capability,
