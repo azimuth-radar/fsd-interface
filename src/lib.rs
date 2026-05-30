@@ -49,18 +49,18 @@
 //! let message_text = String::from("$CQEHAM_GND:@94835:WH:KLM167");
 //!
 //! // We can identify what type of message it is, deserialise it
-//! let message_deserialised = fsd_messages::parse(&message_text).unwrap();
-//! if let FsdMessage::ClientQueryMessage(client_query_message) = message_deserialised {
+//! let message_deserialised = fsd_interface::parse_message(&message_text).unwrap();
+//! if let fsd_interface::FsdMessageType::ClientQueryMessage(client_query_message) = message_deserialised {
 //!
 //!     // And access its data
 //!     assert_eq!("EHAM_GND", client_query_message.from.as_str());
 //!     assert_eq!("@94835", client_query_message.to.as_str());
-//!     if let ClientQueryType::WhoHas(aircraft) = client_query_message.query_type {
-//!         assert_eq!("KLM367", aircraft.as_str());
+//!     if let fsd_interface::ClientQueryType::WhoHas { aircraft_callsign } = client_query_message.query_type {
+//!         assert_eq!("KLM167", aircraft_callsign.as_str());
 //!     }
 //!
 //!     // Plus, on the flip side, we can create our own messages and serialise them
-//!     let new_message = messages::ClientQuery::message::who_has("LIRF_TWR", "@94835", "ITY1561");
+//!     let new_message = fsd_interface::messages::ClientQueryMessage::who_has("LIRF_TWR", "@94835", "ITY1561");
 //!     assert_eq!(String::from("$CQLIRF_TWR:@94835:WH:ITY1561"), new_message.to_string());
 //! }
 //! ```
@@ -94,8 +94,6 @@ pub use chrono::{DateTime, Utc};
 pub use enums::*;
 pub use structs::*;
 
-
-
 /// Deserialises a valid FSD message string into a struct.
 ///
 /// If the string is a valid FSD message, deserialises it into the appropriate struct and returns it inside an [`FsdMessageType`] enum variant that indicates which type it is.
@@ -105,4 +103,3 @@ pub fn parse_message(
 ) -> Result<FsdMessageType, errors::FsdMessageParseError> {
     FsdMessageType::identify(message.as_ref())
 }
-

@@ -2,11 +2,12 @@
 //!
 //!
 
-use std::{collections::HashSet, fmt::Display, net::Ipv4Addr};
+use std::{fmt::Display, net::Ipv4Addr};
 
 use chrono::NaiveDateTime;
 
 use crate::{
+    LandLineCommand, LandLineType, Level, ScratchPad,
     aircraft_config::AircraftConfig,
     enums::{
         AtcRating, AtcType, AtisLine, ClientCapability, ClientQueryType, ClientResponseType,
@@ -15,7 +16,7 @@ use crate::{
     },
     errors::{FsdError, FsdMessageParseError},
     structs::{FlightPlan, PlaneInfo, RadioFrequency, TransponderCode},
-    util, LandLineCommand, LandLineType, ScratchPad,
+    util,
 };
 
 pub const SERVER_CALLSIGN: &str = "SERVER";
@@ -255,7 +256,7 @@ impl PilotDeregisterMessage {
 }
 
 /// Sent at regular intervals by an ATC client to update the server with its position
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct AtcPositionUpdateMessage {
     pub callsign: String,
     pub frequencies: Vec<RadioFrequency>,
@@ -1774,10 +1775,10 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             )),
             "HLP" => {
                 let mut message = fields.get(3).map(|s| s.to_string());
-                if let Some(ref msg) = message {
-                    if msg.is_empty() {
-                        message = None;
-                    }
+                if let Some(ref msg) = message
+                    && msg.is_empty()
+                {
+                    message = None;
                 }
                 Ok(ClientQueryMessage::new(
                     first,
@@ -1787,10 +1788,10 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             }
             "NOHLP" => {
                 let mut message = fields.get(3).map(|s| s.to_string());
-                if let Some(ref msg) = message {
-                    if msg.is_empty() {
-                        message = None;
-                    }
+                if let Some(ref msg) = message
+                    && msg.is_empty()
+                {
+                    message = None;
                 }
                 Ok(ClientQueryMessage::new(
                     first,
@@ -1812,13 +1813,13 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             }
             "FA" => {
                 check_min_num_fields!(fields, 5);
-                let altitude = util::parse_altitude(fields[4])?;
+                let level = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
                     ClientQueryType::SetFinalAltitude {
                         aircraft_callsign: fields[3].to_uppercase(),
-                        altitude,
+                        level,
                     },
                 ))
             }
@@ -1910,13 +1911,13 @@ impl TryFrom<&[&str]> for ClientQueryMessage {
             "TA" => {
                 check_min_num_fields!(fields, 5);
                 let aircraft_callsign = fields[3].to_uppercase();
-                let altitude = util::parse_altitude(fields[4])?;
+                let level = fields[4].parse()?;
                 Ok(ClientQueryMessage::new(
                     first,
                     fields[1],
                     ClientQueryType::SetTempAltitude {
                         aircraft_callsign,
-                        altitude,
+                        level,
                     },
                 ))
             }
@@ -2146,14 +2147,14 @@ impl ClientQueryMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        altitude: i32,
+        level: Level,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
             ClientQueryType::SetFinalAltitude {
                 aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
-                altitude,
+                level,
             },
         )
     }
@@ -2161,14 +2162,14 @@ impl ClientQueryMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        altitude: i32,
+        level: Level,
     ) -> ClientQueryMessage {
         ClientQueryMessage::new(
             from,
             to,
             ClientQueryType::SetTempAltitude {
                 aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
-                altitude,
+                level,
             },
         )
     }
@@ -2365,7 +2366,7 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                     _ => {
                         return Err(FsdMessageParseError::InvalidValidAtcStatus(
                             fields[3].to_string(),
-                        ))
+                        ));
                     }
                 };
                 let atc_callsign = fields.get(4).unwrap_or(&fields[1]).to_uppercase();
@@ -2382,7 +2383,7 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
             _ => {
                 return Err(FsdMessageParseError::UnknownMessageType(
                     fields[2].to_string(),
-                ))
+                ));
             }
         };
         Ok(ClientQueryResponseMessage::new(from, to, response_type))
@@ -2463,7 +2464,7 @@ impl ClientQueryResponseMessage {
             from,
             to,
             ClientResponseType::Server {
-                hostname_or_ip_address: hostname_or_ip_address.into()
+                hostname_or_ip_address: hostname_or_ip_address.into(),
             },
         )
     }
@@ -2570,18 +2571,18 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             }
             "TA" => {
                 check_min_num_fields!(fields, 6);
-                let altitude = util::parse_altitude(fields[5])?;
+                let level = fields[5].parse()?;
                 SharedStateType::TempAltitude {
                     aircraft_callsign: fields[4].to_uppercase(),
-                    altitude,
+                    level,
                 }
             }
             "FA" => {
                 check_min_num_fields!(fields, 6);
-                let altitude = util::parse_altitude(fields[5])?;
+                let level = fields[5].parse()?;
                 SharedStateType::FinalAltitude {
                     aircraft_callsign: fields[4].to_uppercase(),
-                    altitude,
+                    level,
                 }
             }
             "VT" => {
@@ -2712,7 +2713,7 @@ impl TryFrom<&[&str]> for SharedStateMessage {
             _ => {
                 return Err(FsdMessageParseError::InvalidSharedStateType(
                     fields[3].to_string(),
-                ))
+                ));
             }
         };
 
@@ -2783,14 +2784,14 @@ impl SharedStateMessage {
         from: impl AsRef<str>,
         to: impl AsRef<str>,
         aircraft_callsign: impl AsRef<str>,
-        altitude: i32,
+        level: Level,
     ) -> SharedStateMessage {
         SharedStateMessage::new(
             from,
             to,
             SharedStateType::TempAltitude {
                 aircraft_callsign: aircraft_callsign.as_ref().to_uppercase(),
-                altitude,
+                level,
             },
         )
     }

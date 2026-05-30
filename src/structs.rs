@@ -1,6 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
-use crate::{enums::FlightRules, errors::FsdMessageParseError, util::parse_altitude};
+use crate::{Level, enums::FlightRules, errors::FsdMessageParseError};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct TransponderCode(u16);
@@ -72,9 +72,9 @@ impl RadioFrequency {
     ///
     /// # Example
     /// ```
-    /// use fsd_messages::util::RadioFrequency;
+    /// use fsd_interface::RadioFrequency;
     /// let freq = RadioFrequency::new(118, 300).unwrap();
-    /// assert_eq!(RadioFrequency(118, 300), freq);
+    /// assert_eq!((118, 300), freq.frequency());
     /// ```
     pub fn new(left: u16, right: u16) -> Result<RadioFrequency, FsdMessageParseError> {
         if !((118..=137).contains(&left)
@@ -97,7 +97,7 @@ impl RadioFrequency {
     ///
     /// # Example
     /// ```
-    /// use fsd_messages::util::RadioFrequency;
+    /// use fsd_interface::RadioFrequency;
     /// let freq = RadioFrequency::new(133, 175).unwrap();
     /// let human_readable = freq.to_human_readable_string();
     /// assert_eq!(human_readable, String::from("133.175"));
@@ -236,7 +236,7 @@ pub struct FlightPlan {
     pub origin: String,
     pub etd: u16,
     pub atd: u16,
-    pub cruise_level: u32,
+    pub cruise_level: Level,
     pub destination: String,
     pub hours_enroute: u8,
     pub mins_enroute: u8,
@@ -343,7 +343,7 @@ impl TryFrom<&[&str]> for FlightPlan {
             fields[3],
             etd,
             atd,
-            parse_altitude(fields[6])? as u32,
+            fields[6].parse()?,
             fields[7],
             hours_enroute,
             mins_enroute,
@@ -364,7 +364,7 @@ impl FlightPlan {
         origin: impl AsRef<str>,
         etd: u16,
         atd: u16,
-        cruise_level: u32,
+        cruise_level: Level,
         destination: impl AsRef<str>,
         hours_enroute: u8,
         mins_enroute: u8,

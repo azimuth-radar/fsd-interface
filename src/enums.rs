@@ -1,10 +1,10 @@
-use std::collections::HashSet;
 use std::net::Ipv4Addr;
 use std::{fmt::Display, str::FromStr};
 
 use crate::messages::*;
 use crate::structs::{RadioFrequency, TransponderCode};
 use crate::{aircraft_config::AircraftConfig, errors::FsdMessageParseError};
+use bevy_ecs::component::Component;
 use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -24,6 +24,7 @@ pub enum ClientCapability {
     Stealth,
     Teamspeak,
     NewATIS,
+    NewInfo,
     Mumble,
     GlobalData,
     Simulated,
@@ -48,6 +49,7 @@ impl FromStr for ClientCapability {
             "STEALTH" => Ok(ClientCapability::Stealth),
             "TEAMSPEAK" => Ok(ClientCapability::Teamspeak),
             "NEWATIS" => Ok(ClientCapability::NewATIS),
+            "NEWINFO" => Ok(ClientCapability::NewInfo),
             "MUMBLE" => Ok(ClientCapability::Mumble),
             "GLOBALDATA" => Ok(ClientCapability::GlobalData),
             "SIMULATED" => Ok(ClientCapability::Simulated),
@@ -74,6 +76,7 @@ impl Display for ClientCapability {
             ClientCapability::Stealth => write!(f, "STEALTH"),
             ClientCapability::Teamspeak => write!(f, "TEAMSPEAK"),
             ClientCapability::NewATIS => write!(f, "NEWATIS"),
+            ClientCapability::NewInfo => write!(f, "NEWINFO"),
             ClientCapability::Mumble => write!(f, "MUMBLE"),
             ClientCapability::GlobalData => write!(f, "GLOBALDATA"),
             ClientCapability::Simulated => write!(f, "SIMULATED"),
@@ -282,6 +285,22 @@ impl FromStr for AtcType {
             "5" => Ok(AtcType::Approach),
             "6" => Ok(AtcType::Centre),
             _ => Err(FsdMessageParseError::InvalidAtcType(s.to_string())),
+        }
+    }
+}
+
+impl Display for AtcType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            AtcType::Observer => f.write_str("Observer"),
+            AtcType::FlightServiceStation => {
+                f.write_str("Flight Service Station or Flow Management")
+            }
+            AtcType::Delivery => f.write_str("Delivery"),
+            AtcType::Ground => f.write_str("Ground, Ramp or Apron"),
+            AtcType::Tower => f.write_str("Tower"),
+            AtcType::Approach => f.write_str("Approach or Departure"),
+            AtcType::Centre => f.write_str("Centre"),
         }
     }
 }
@@ -598,11 +617,11 @@ pub enum ClientQueryType {
     }, //DR
     SetFinalAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     }, //FA
     SetTempAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     }, //TA
     SetBeaconCode {
         aircraft_callsign: String,
@@ -673,12 +692,12 @@ impl Display for ClientQueryType {
             }
             ClientQueryType::SetFinalAltitude {
                 aircraft_callsign,
-                altitude,
-            } => write!(f, "FA:{}:{}", aircraft_callsign, altitude),
+                level,
+            } => write!(f, "FA:{}:{}", aircraft_callsign, level),
             ClientQueryType::SetTempAltitude {
                 aircraft_callsign,
-                altitude,
-            } => write!(f, "TA:{}:{}", aircraft_callsign, altitude),
+                level,
+            } => write!(f, "TA:{}:{}", aircraft_callsign, level),
             ClientQueryType::SetBeaconCode {
                 aircraft_callsign,
                 code,
@@ -836,11 +855,11 @@ pub enum SharedStateType {
     },
     TempAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     },
     FinalAltitude {
         aircraft_callsign: String,
-        altitude: i32,
+        level: Level,
     },
     VoiceType {
         aircraft_callsign: String,
@@ -889,15 +908,15 @@ impl Display for SharedStateType {
             }
             SharedStateType::TempAltitude {
                 aircraft_callsign,
-                altitude,
+                level,
             } => {
-                write!(f, "TA:{}:{}", aircraft_callsign, altitude)
+                write!(f, "TA:{}:{}", aircraft_callsign, level)
             }
             SharedStateType::FinalAltitude {
                 aircraft_callsign,
-                altitude,
+                level,
             } => {
-                write!(f, "FA:{}:{}", aircraft_callsign, altitude)
+                write!(f, "FA:{}:{}", aircraft_callsign, level)
             }
             SharedStateType::VoiceType {
                 aircraft_callsign,
@@ -1004,8 +1023,9 @@ impl Display for Operator {
     }
 }
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, Default, Component, PartialEq, Eq)]
 pub enum GroundState {
+    #[default]
     NoState,
     OnFrequency,
     DeIcing,
@@ -1050,6 +1070,7 @@ pub enum ScratchPad {
     ClearanceReceived,
     ClearanceCancelled,
     GroundState(GroundState),
+    MissedApproach,
 }
 impl FromStr for ScratchPad {
     type Err = FsdMessageParseError;
@@ -1103,6 +1124,7 @@ impl FromStr for ScratchPad {
             "PARK" => Ok(Self::GroundState(GroundState::OnBlock)),
             "CLEA" => Ok(Self::ClearanceReceived),
             "NOTC" => Ok(Self::ClearanceCancelled),
+            "MISAP_" => Ok(Self::MissedApproach),
             text => Ok(ScratchPad::PlainTextOrDirect(text.to_string())),
         }
     }
@@ -1124,13 +1146,14 @@ impl Display for ScratchPad {
             Self::GroundState(gs) => gs.fmt(f),
             Self::ClearanceReceived => write!(f, "CLEA"),
             Self::ClearanceCancelled => write!(f, "NOTC"),
+            Self::MissedApproach => write!(f, "MISAP_"),
         }
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Component, Default)]
 pub enum VoiceCapability {
-    Unknown,
+    #[default]
     Voice,
     Text,
     Receive,
@@ -1139,7 +1162,7 @@ impl FromStr for VoiceCapability {
     type Err = FsdMessageParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         if s.is_empty() {
-            return Ok(VoiceCapability::Unknown);
+            return Ok(VoiceCapability::Voice);
         }
         let s = s.to_lowercase();
         match s.as_str() {
@@ -1153,10 +1176,54 @@ impl FromStr for VoiceCapability {
 impl Display for VoiceCapability {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match *self {
-            VoiceCapability::Unknown => write!(f, ""),
             VoiceCapability::Voice => write!(f, "v"),
             VoiceCapability::Text => write!(f, "t"),
             VoiceCapability::Receive => write!(f, "r"),
+        }
+    }
+}
+
+/// Type used for CFL (TA in FSD) and RFL (FA in FSD) to represent the
+/// filed or cleared flight level, altitude or special VFR keyword
+///
+/// Currently no difference in behaviour for Altitude vs FL, needs testing of other clients
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Level {
+    // Used for example when filing with the "VFR" keyword
+    VFR,
+    // Flight Level in feet
+    FlightLevel(i32),
+    // Altitude in feet
+    Altitude(i32),
+}
+impl FromStr for Level {
+    type Err = FsdMessageParseError;
+    fn from_str(input: &str) -> Result<Self, Self::Err> {
+        if input.is_empty() {
+            Ok(Self::FlightLevel(0))
+        } else if input == "VFR" {
+            Ok(Self::VFR)
+        } else {
+            let flight_level = input.to_uppercase().starts_with("FL");
+            let input_trimmed = if flight_level { &input[2..] } else { input };
+
+            let as_num: i32 = input_trimmed
+                .parse()
+                .map_err(|_| FsdMessageParseError::InvalidLevel(input.to_string()))?;
+            Ok(if flight_level {
+                Self::FlightLevel(as_num * 100)
+            } else {
+                Self::FlightLevel(as_num)
+            })
+        }
+    }
+}
+impl Display for Level {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Level::VFR => f.write_str("VFR"),
+            Level::FlightLevel(fl) => f.write_fmt(format_args!("{fl:.0}")),
+            Level::Altitude(a) => f.write_fmt(format_args!("{a:.0}")),
         }
     }
 }
