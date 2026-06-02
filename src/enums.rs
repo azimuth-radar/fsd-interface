@@ -282,6 +282,18 @@ pub enum AtcType {
     Approach,
     Centre,
 }
+impl AtcType {
+    pub fn max_range(&self) -> u16 {
+        match *self {
+            AtcType::Observer => 300,
+            AtcType::FlightServiceStation => 1500,
+            AtcType::Delivery | AtcType::Ground => 20,
+            AtcType::Tower => 50,
+            AtcType::Approach => 150,
+            AtcType::Centre => 600
+        }
+    }
+}
 
 impl FromStr for AtcType {
     type Err = FsdMessageParseError;
