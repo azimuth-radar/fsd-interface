@@ -327,7 +327,7 @@ impl Display for AtcType {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TransponderMode {
     Standby,
     ModeC,
