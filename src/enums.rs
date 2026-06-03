@@ -781,6 +781,7 @@ pub enum AtisLine {
     TextLine(String),
     LogoffTime(Option<u16>),
     EndMarker(usize),
+    AtisLetter(Option<char>),
 }
 impl Display for AtisLine {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -790,6 +791,8 @@ impl Display for AtisLine {
             AtisLine::LogoffTime(Some(time)) => write!(f, "Z:{:04}z", time),
             AtisLine::LogoffTime(None) => write!(f, "Z:z"),
             AtisLine::EndMarker(num_lines) => write!(f, "E:{}", num_lines),
+            AtisLine::AtisLetter(Some(letter)) => write!(f, "A:{}", letter),
+            AtisLine::AtisLetter(None) => write!(f, "A:"),
         }
     }
 }
