@@ -2329,7 +2329,11 @@ impl TryFrom<&[&str]> for ClientQueryResponseMessage {
                         ClientResponseType::ATIS {
                             atis_line: AtisLine::EndMarker(line_count),
                         }
-                    }
+                    },
+                    "A" => {
+                        let letter = fields[4].to_uppercase().chars().next().filter(|letter| letter.is_ascii_uppercase());
+                        ClientResponseType::ATIS { atis_line: AtisLine::AtisLetter(letter) }
+                    },
                     _ => return Err(FsdMessageParseError::InvalidATISLine(fields[3].to_string())),
                 }
             }
